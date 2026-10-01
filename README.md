@@ -19,6 +19,7 @@
 | 자동 녹음 | 앱이 외장 마이크 음량값을 감시하고, 기준값 이상이면 녹음·분류·저장을 진행합니다. |
 | AI 소음 분류 | 가구 끌기, 발걸음, 망치질, 순간 충격, 청소기, 정상·기타 소리를 분류합니다. |
 | 추가 소리 분석 | 로그인·App Check로 인증된 Firebase Callable 서버를 통해 녹음의 소리 종류·특징·다른 가능성을 분석하고 결과를 저장합니다. |
+| 상담 참고보고서 | 녹음 선택·작성·미리보기 후 한글 PDF로 저장하거나 공유합니다. 개인정보 가림과 선택한 로컬 파일의 SHA-256 생성을 지원합니다. |
 | 기록 관리 | 측정 기록, 메모, AI 분류 결과를 확인하고 저장된 음원을 재생합니다. |
 | 계정 및 동기화 | Google 로그인과 Firebase를 통해 사용자별 기록과 음원을 동기화합니다. |
 
@@ -27,7 +28,7 @@
 ## 🛠 기술 스택
 
 - **언어**: Kotlin, C++(Arduino), Python, JavaScript
-- **프레임워크 / 라이브러리**: Jetpack Compose, Room, Coroutines, OkHttp, TensorFlow Lite, Firebase Auth, Firestore, Firebase Storage, Cloud Functions, App Check, Gemini API
+- **프레임워크 / 라이브러리**: Jetpack Compose, Room, Coroutines, OkHttp, TensorFlow Lite, Firebase Auth, Firestore, Firebase Storage, Cloud Functions, App Check, Gemini API, PDFBox-Android
 - **도구**: Android Studio, Arduino IDE, Gradle, Git, GitHub
 - **하드웨어**: ESP32-S3 SuperMini, INMP441 마이크
 
@@ -46,7 +47,7 @@ git clone --branch develop https://github.com/WayMakerSchool/2026-KNOK-PICASO.gi
 cd 2026-KNOK-PICASO
 ```
 
-2026-10-01 전달된 최신 `KNOK.zip`에서 Android·ESP32·소리 분석 서버·AI 도구 소스를 등록했습니다. 추출 범위와 이번 확인 결과는 [소스 등록 기록](docs/SOURCE_IMPORT_20261001.md)을 참고하세요.
+2026-10-02 전달된 최종 `KNOK.zip`의 상담 참고보고서 기능까지 반영했습니다. 추출 범위와 이번 확인 결과는 [최종 소스 등록 기록](docs/SOURCE_IMPORT_20261002.md)을 참고하세요. [이전 등록 기록](docs/SOURCE_IMPORT_20261001.md)도 보관합니다.
 
 ### 2. Android 앱 실행 준비
 
@@ -80,13 +81,18 @@ Google 로그인과 클라우드 동기화를 사용하려면 Firebase의 Androi
 
 [소리 분석 연결·설정 안내](firebase/SOUND_ANALYSIS.md)를 확인하세요. 유료 Gemini 키와 인증 토큰은 `.secrets/` 또는 서버 Secret Manager 등 비공개 설정으로 관리하며 Git이나 APK에 넣지 않습니다. 서버 설정·배포와 유료 API 호출은 소스 등록 작업과 별도로 수행합니다.
 
+### 5. 상담 참고보고서 만들기
+
+녹음목록에서 **상담 참고보고서 만들기**를 선택한 뒤 녹음 선택 → 작성·관찰 → 미리보기 → 내용 검토 → PDF 저장/공유 순서로 진행합니다. 보고서는 저장된 AI 결과를 사용하며, 보고서 생성을 위해 새 Gemini 분석을 호출하지 않습니다. 자세한 사용 방법과 제약은 [보고서 출력 안내](REPORT_EXPORT.md)를 참고하세요.
+
 ## 📁 폴더 구조
 
 최신 ZIP에서 등록한 소스 구성입니다.
 
 ```text
 .
-├── app/              # Android 앱·테스트·리소스·TFLite 모델
+├── app/              # Android 앱·보고서 PDF·테스트·리소스·TFLite 모델
+│   └── src/main/     # report 코드·보고서 화면·한글 글꼴·라이선스
 ├── esp32/            # ESP32-S3 + INMP441 펌웨어·배선 안내
 ├── firebase/         # 보안 규칙·소리 분석 서버·설정 및 검증 기록
 │   └── functions/    # Node.js Callable 함수·package-lock·테스트
@@ -94,6 +100,7 @@ Google 로그인과 클라우드 동기화를 사용하려면 Firebase의 Androi
 ├── gradle/           # Android 빌드 wrapper
 ├── docs/             # 소스 등록 기록
 ├── firebase.json     # Firebase Functions 배포 설정
+├── REPORT_EXPORT.md  # 상담 참고보고서 사용 방법·검증 기록
 ├── *.gradle.kts, gradle.properties, gradlew, gradlew.bat
 └── README.md
 ```
