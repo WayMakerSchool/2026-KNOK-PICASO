@@ -32,11 +32,10 @@
 
 ## 👥 팀원
 
-| 프로필 추후 추가 | <img src="https://github.com/Yesungcat.png" width="100" alt="이예성 프로필"> |
+| <img src="https://github.com/youngincho10.png" width="100" alt="조영인 프로필"> | <img src="https://github.com/Yesungcat.png" width="100" alt="이예성 프로필"> |
 | :--: | :--: |
-| **조영인** | [**이예성**](https://github.com/Yesungcat) |
+| [**조영인**](https://github.com/youngincho10) | [**이예성**](https://github.com/Yesungcat) |
 | 소프트웨어·하드웨어 개발 | 전체 기획 · 제품 방향성 · 디자인 · 발표 · 사업 방향 |
-
 ## ▶️ 실행 방법
 
 ### 1. 저장소 받기
