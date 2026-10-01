@@ -96,6 +96,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -116,6 +118,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.data.NoiseRecord
 import com.example.auth.FirebaseAuthViewModel
+import com.example.auth.AccountSession
 import com.example.ui.theme.DarkBackground
 import com.example.ui.theme.DarkSurface
 import com.example.ui.theme.DarkSurfaceVariant
@@ -410,6 +413,8 @@ fun DashboardScreen(
 ) {
     val context = LocalContext.current
     val isMeasuring by viewModel.isMeasuring.collectAsState()
+    val isTemporaryPhoneRecording by viewModel.isTemporaryPhoneRecording.collectAsState()
+    val phoneRecordingError by viewModel.phoneRecordingError.collectAsState()
     val currentDb by viewModel.currentDb.collectAsState()
     val currentVibe by viewModel.currentVibe.collectAsState()
     val maxDb by viewModel.maxSessionDb.collectAsState()
@@ -903,6 +908,49 @@ fun DashboardScreen(
                             )
                         }
                     }
+                }
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("임시 · 휴대폰 마이크 녹음", color = QuietPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        if (isTemporaryPhoneRecording) "녹음 중 · ${formatSeconds(durationS)}"
+                        else "휴대폰 마이크로 녹음합니다. 저장한 파일은 녹음목록에서 재생하거나 소리 분석할 수 있습니다.",
+                        color = TextSecondary,
+                        fontSize = 12.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = {
+                            if (isTemporaryPhoneRecording) {
+                                viewModel.stopMeasurementAndSave()
+                            } else if (hasMicPermission) {
+                                viewModel.startMeasurement(context, temporaryPhoneRecording = true)
+                            } else {
+                                onRequestMicPermission()
+                            }
+                        },
+                        enabled = !isMeasuring || isTemporaryPhoneRecording,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = QuietPrimary),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isTemporaryPhoneRecording) Icons.Default.Stop else Icons.Default.Mic,
+                            contentDescription = null
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(if (isTemporaryPhoneRecording) "녹음 정지 및 저장" else "임시 녹음 시작")
+                    }
+                    if (isMeasuring && !isTemporaryPhoneRecording) {
+                        Text("진행 중인 측정을 먼저 종료해 주세요.", color = TextSecondary, fontSize = 11.sp)
+                    }
+                    phoneRecordingError?.let { Text(it, color = QuietAlert, fontSize = 12.sp) }
                 }
             }
         }
@@ -1629,6 +1677,12 @@ fun LogRecordCard(record: NoiseRecord, onDelete: () -> Unit) {
 @Composable
 fun RecordingScreen(viewModel: NoiseViewModel) {
     val allRecords by viewModel.allRecords.collectAsState()
+    val owner by AccountSession.userId.collectAsState()
+    var showReport by rememberSaveable(owner) { mutableStateOf(false) }
+    if (showReport) {
+        key(owner) { NoiseReportScreen(records = allRecords, onBack = { showReport = false }) }
+        return
+    }
     val recordingsWithFiles = allRecords.filter {
         it.recordingPath != null || it.remoteAudioPath != null
     }
@@ -1663,6 +1717,12 @@ fun RecordingScreen(viewModel: NoiseViewModel) {
                 fontSize = 11.sp
             )
         }
+
+        OutlinedButton(
+            onClick = { showReport = true },
+            enabled = recordingsWithFiles.isNotEmpty(),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
+        ) { Text("상담 참고보고서 만들기") }
 
         if (recordingsWithFiles.isEmpty()) {
             Box(

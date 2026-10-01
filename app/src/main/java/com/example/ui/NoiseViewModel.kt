@@ -61,6 +61,11 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
     private val _isMeasuring = MutableStateFlow(false)
     val isMeasuring: StateFlow<Boolean> = _isMeasuring.asStateFlow()
 
+    private val _isTemporaryPhoneRecording = MutableStateFlow(false)
+    val isTemporaryPhoneRecording = _isTemporaryPhoneRecording.asStateFlow()
+    private val _phoneRecordingError = MutableStateFlow<String?>(null)
+    val phoneRecordingError = _phoneRecordingError.asStateFlow()
+
     private val _currentDb = MutableStateFlow(30.0)
     val currentDb: StateFlow<Double> = _currentDb.asStateFlow()
 
@@ -188,8 +193,9 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
         _isLimitExceededNow.value = currentDbVal >= noiseThreshold || currentVibeVal >= vibeThreshold
     }
 
-    fun startMeasurement(context: Context) {
+    fun startMeasurement(context: Context, temporaryPhoneRecording: Boolean = false) {
         if (_isMeasuring.value) return
+        _phoneRecordingError.value = null
 
         // Setup File for recording
         val timeStamp = System.currentTimeMillis()
@@ -203,7 +209,8 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
             } else {
                 @Suppress("DEPRECATION")
                 MediaRecorder()
-            }.apply {
+            }
+            mediaRecorder!!.apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
@@ -213,8 +220,15 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
             }
         } catch (e: Exception) {
             Log.e("NoiseViewModel", "Failed to start MediaRecorder: ${e.message}")
+            try { mediaRecorder?.release() } catch (_: Exception) {}
             // Fallback: If microphone crashes, we proceed with only vibration
             mediaRecorder = null
+            if (temporaryPhoneRecording) {
+                activeAudioFile?.delete()
+                activeAudioFile = null
+                _phoneRecordingError.value = "휴대폰 마이크를 사용할 수 없습니다. 마이크 권한과 다른 녹음 앱을 확인해 주세요."
+                return
+            }
         }
 
         // Setup Sensor Manager for accelerometer
@@ -223,6 +237,7 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
         sensorManager?.registerListener(sensorEventListener, accelSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
         // Reset variables
+        _isTemporaryPhoneRecording.value = temporaryPhoneRecording
         _isMeasuring.value = true
         _currentDb.value = 30.0
         _currentVibe.value = 0.0
@@ -283,6 +298,11 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
 
     fun stopMeasurementAndSave(note: String = "") {
         if (!_isMeasuring.value) return
+        val wasTemporaryPhoneRecording = _isTemporaryPhoneRecording.value
+        val savedNote = if (wasTemporaryPhoneRecording) {
+            listOf("임시 · 휴대폰 마이크", note.trim()).filter { it.isNotEmpty() }.joinToString(" · ")
+        } else note
+        _isTemporaryPhoneRecording.value = false
 
         // Stop measurement flags and loops
         _isMeasuring.value = false
@@ -294,14 +314,19 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
 
         // Stop & Release Media Recorder safely
         try {
-            mediaRecorder?.apply {
-                stop()
-                release()
-            }
+            mediaRecorder?.stop()
         } catch (e: Exception) {
             Log.e("NoiseViewModel", "Error stopping MediaRecorder: ${e.message}")
+            if (wasTemporaryPhoneRecording) {
+                activeAudioFile?.delete()
+                activeAudioFile = null
+                _phoneRecordingError.value = "녹음이 너무 짧거나 저장에 실패했습니다. 다시 녹음해 주세요."
+                return
+            }
+        } finally {
+            try { mediaRecorder?.release() } catch (_: Exception) {}
+            mediaRecorder = null
         }
-        mediaRecorder = null
 
         // Write record to database
         val duration = _sessionDurationS.value * 1000L // convert to ms
@@ -326,7 +351,7 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
                 isVibeExceeded = isVibeViolation,
                 recordingPath = recordingPath,
                 durationMs = duration,
-                note = note
+                note = savedNote
             )
             repository.insert(finalRecord)
         }
@@ -334,6 +359,7 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
 
     fun stopMeasurementWithoutSaving() {
         if (!_isMeasuring.value) return
+        _isTemporaryPhoneRecording.value = false
         _isMeasuring.value = false
         measurementJob?.cancel()
         timerJob?.cancel()
