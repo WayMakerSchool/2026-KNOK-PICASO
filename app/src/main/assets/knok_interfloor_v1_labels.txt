@@ -1,0 +1,6 @@
+dragging_furniture
+footstep
+hammering
+instant_impact
+normal_or_unknown
+vacuum_cleaner

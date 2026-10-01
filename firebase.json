@@ -1,0 +1,3 @@
+{
+  "functions": [{"source": "firebase/functions", "codebase": "sound-analysis", "runtime": "nodejs22"}]
+}
