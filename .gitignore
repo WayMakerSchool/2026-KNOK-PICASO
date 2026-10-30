@@ -47,3 +47,8 @@ artifacts/
 /delivery/
 /evidence/*.log
 /evidence/*.png
+
+# Local AI runtime environments and downloaded third-party backbone.
+research/.venv-sound/
+research/.venv-floor/
+research/sound/base_runtime/ast-model/model.safetensors

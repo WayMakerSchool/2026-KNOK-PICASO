@@ -7,12 +7,12 @@ KNOK는 생활·층간 소음을 기록하고 소리 종류를 분석하는 Andr
 - `app/`: Android 앱 V3 3.2.2 (`-PknokV3=true`); 녹음·기록·보고서와 모델 점수 표시. 기존 APK와 별도 패키지입니다.
 - `esp32/gpio2-fast/`: 피에조 GPIO2 제품에서 사용한 자동녹음 최대 6초 시연 펌웨어.
 - `esp32/gpio11/`: 피에조 GPIO11 제품용 별도 펌웨어. 두 제품을 혼동하지 마세요.
-- `research/`: 소리 분류·층 방향 추정 연구 코드와 일부 모델. 맥 분석 서비스는 기존 로컬 연구 환경의 경로와 별도 의존성에 연결되어 있어 이 폴더만으로 곧바로 실행되는 배포본은 아닙니다.
+- `research/`: 소리 분류·층 방향 연구 코드와 모델. 설치 스크립트로 두 Python 환경과 AST 사전학습 가중치를 준비한 뒤 로컬 분석 서비스를 실행할 수 있습니다. 설치 및 확인 방법은 [AI 실행 안내](research/README.md)를 참고하세요.
 - `firebase/`, `tools/`, `docs/`: 클라우드 함수, 학습·검증 도구 및 기존 문서입니다.
 
 ## Android 실행
 
-Android SDK와 JDK를 설치하고 이 저장소를 Android Studio로 엽니다. `./gradlew -PknokV3=true assembleDebug`로 V3 디버그 빌드를 시도할 수 있습니다. Google 로그인·Firebase 기능에는 팀이 별도로 제공하는 `app/google-services.json`과 Firebase 설정이 필요합니다. 기존 기록을 유지하려면 앱 삭제나 데이터 초기화를 피하세요. 실제 로그인과 기기 연결은 환경별로 확인해야 합니다.
+Android SDK와 JDK를 설치하고 이 저장소를 Android Studio로 엽니다. `./gradlew -PknokV3=true assembleDebug`로 별도 패키지의 V3 디버그 앱을 빌드할 수 있습니다. V3 검증 빌드는 Google Services 플러그인을 사용하지 않으므로 Google 로그인·Firebase 동기화는 이 공개 설정만으로 재현되지 않습니다. 기존 기록을 유지하려면 앱 삭제나 데이터 초기화를 피하세요. 실제 로그인과 기기 연결은 환경별로 확인해야 합니다.
 
 ## ESP32 연결
 
@@ -24,7 +24,7 @@ Android SDK와 JDK를 설치하고 이 저장소를 Android Studio로 엽니다.
 
 ## 개인정보와 보안
 
-Wi-Fi 접속정보, 서명키, Firebase 설정, 실제 녹음, 개인 데이터, 빌드 결과물은 공개 저장소에서 제외합니다. APK는 이 소스와 별도로 관리합니다. 소리 모델에는 추가 외부 사전학습 가중치와 Python 환경이 필요합니다.
+Wi-Fi 접속정보, 서명키, Firebase 설정, 실제 녹음, 개인 데이터, 빌드 결과물은 공개 저장소에서 제외합니다. 시연 APK와 대용량 AST 가중치는 GitHub Releases에서 별도로 제공합니다. 소리 모델에는 이 가중치와 Python 환경이 필요하며 설치 스크립트가 파일의 SHA-256을 확인합니다.
 
 ## 팀
 

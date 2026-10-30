@@ -1,0 +1,6 @@
+# Preserve exact bytes for files checked against frozen model-manifest hashes.
+research/sound/base_runtime/*.py -text
+research/sound/base_runtime/research-runtime.json -text
+research/sound/base_runtime/ast-model/* -text
+# The upstream model card intentionally contains trailing spaces.
+research/sound/base_runtime/ast-model/README.md -text whitespace=-blank-at-eol

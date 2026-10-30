@@ -1,0 +1,149 @@
+{
+  "model_id": "knok-research-ast-paired-residual-20261025",
+  "status": "research_only_not_installed",
+  "labels": [
+    "dragging_furniture",
+    "footstep",
+    "hammering",
+    "instant_impact",
+    "normal_or_unknown",
+    "vacuum_cleaner"
+  ],
+  "threshold": 0.65,
+  "input": {
+    "sample_rate": 16000,
+    "channels": 1,
+    "sample_width_bytes": 2,
+    "window_policy": "label-free activity4, single selected 64000 samples"
+  },
+  "head_sha256": "7e34f238a06a0810192577de171fcceb1bf1b3d0bf2ac3fad387882cd9ed9146",
+  "fitted_head_sha256": "86b08ef9d489eae1e0189e0865cded2ddb7ad0d8ccf66e28f951ce9addcc0985",
+  "encoder_source": {
+    "model_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
+    "revision": "f826b80d28226b62986cc218e5cec390b1096902",
+    "license": "bsd-3-clause",
+    "files": {
+      "config.json": {
+        "sha256": "a93d525511d77e8ecc933d09674b85099815bbbb417c228a4edd655e252fb9ff",
+        "bytes": 26763,
+        "verified_lfs": false
+      },
+      "preprocessor_config.json": {
+        "sha256": "8d04ba5a9c6fca5d39d0de2b1fd05ecf79deb589fbba279728bbebac39934231",
+        "bytes": 297,
+        "verified_lfs": false
+      },
+      "README.md": {
+        "sha256": "dbc8ce1fc5abd1635d073640d8cb032901bfe264a5e06507f363f10a6112cfc8",
+        "bytes": 1165,
+        "verified_lfs": false
+      },
+      "model.safetensors": {
+        "sha256": "ae0c1e2ad4e1381d851fa9bf298ba13ebc9c5a914cdee2dbe427a6583869924d",
+        "bytes": 346404948,
+        "verified_lfs": true
+      }
+    },
+    "runtime_pins": [
+      "torch==2.9.1",
+      "transformers==4.57.1",
+      "safetensors==0.6.2",
+      "numpy==2.2.6",
+      "scipy==1.15.3"
+    ],
+    "no_remote_code": true,
+    "no_private_data_upload": true
+  },
+  "code_sha256": {
+    "portable_head.py": "fc2d23f835c7c32659af6211fbaca641753af5141c0697db2b143ad47afef643",
+    "silent_preprocess.py": "f420b995b420c65d830dcbec2625afcab1899ccfc507fc1d609543aa15cb8802",
+    "silent_runtime.py": "5daa583262b2679cf68d115b8c38988dc5b215c16cdc42bc828d142eaf12e6b1",
+    "predict_research.py": "1e68e2d6c9798ae41982774602a7d12a0bc333315caec6325bcd497f96f88cb0"
+  },
+  "parity": {
+    "stored_embeddings": 246,
+    "max_probability_error": 4.172325134277344e-07,
+    "same_threshold_decisions": true
+  },
+  "adaptive_development": {
+    "count": 102,
+    "parents": 84,
+    "accuracy": 0.7142857142857145,
+    "pair_accuracy": 0.6309523809523809,
+    "pair_macro_f1": 0.7274774774774775,
+    "macro_f1": 0.7310737042795553,
+    "other_macro_f1": 0.7328718176805944,
+    "pair_confusions": 0.5,
+    "recall": {
+      "dragging_furniture": 0.738095238095238,
+      "footstep": 0.7142857142857143,
+      "hammering": 0.5476190476190476,
+      "instant_impact": 0.5238095238095238,
+      "normal_or_unknown": 0.8571428571428571,
+      "vacuum_cleaner": 0.9047619047619048
+    },
+    "confusion_matrix": [
+      [
+        10.333333333333332,
+        0.0,
+        0.0,
+        0.0,
+        3.6666666666666665,
+        0.0
+      ],
+      [
+        0.0,
+        10.0,
+        0.5,
+        0.0,
+        3.5,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        7.666666666666666,
+        1.0,
+        5.333333333333333,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        2.5,
+        7.333333333333333,
+        4.166666666666666,
+        0.0
+      ],
+      [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        12.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.3333333333333333,
+        1.0,
+        12.666666666666666
+      ]
+    ],
+    "label_order": [
+      "dragging_furniture",
+      "footstep",
+      "hammering",
+      "instant_impact",
+      "normal_or_unknown",
+      "vacuum_cleaner"
+    ]
+  },
+  "independent_accuracy_verified": false,
+  "physical_accuracy_verified": false,
+  "mobile_port_verified": false,
+  "production_adoption": false,
+  "final_D_E_new36_consumed": false
+}
