@@ -1,0 +1,241 @@
+{
+  "scope": "fitting-related numerical portability, not independent test",
+  "model_version": "knok-room-pairgate-research-20261024",
+  "runtime_fingerprint": "e1e6f305d987b4789f60bc070d1c973c146f6b2ca8af3996e3e73b5193437d25",
+  "cases": [
+    {
+      "file": "104e6f858428-23bf9eb916df557c-00000001.wav",
+      "wav_sha256": "5b8443d8f3a82fd7b1ade3bf080a28f9119ad3404a4033eae45a46e306453621",
+      "reference": {
+        "label": "hammering",
+        "model_score": 0.9966046810150146,
+        "probabilities": {
+          "dragging_furniture": 1.9356994016561657e-05,
+          "footstep": 0.0014479024102911353,
+          "hammering": 0.9966046810150146,
+          "instant_impact": 0.0018324214033782482,
+          "normal_or_unknown": 2.754733395704534e-05,
+          "vacuum_cleaner": 6.807719182688743e-05
+        },
+        "window_start_sample": 22400,
+        "gate_window_start_sample": 22400,
+        "signal_quality": "normal",
+        "model_version": "knok-room-pairgate-research-20261024",
+        "runtime_fingerprint": "e1e6f305d987b4789f60bc070d1c973c146f6b2ca8af3996e3e73b5193437d25",
+        "components": {
+          "global_probabilities": [
+            0.00013193186896387488,
+            0.0006822525174356997,
+            0.9860447645187378,
+            0.012489273212850094,
+            0.00018775493663270026,
+            0.00046399515122175217
+          ],
+          "gate_probabilities": [
+            5.0972601457033306e-05,
+            0.0014479024102911353,
+            0.9966046810150146,
+            0.0005128058837726712,
+            0.0013343225000426173,
+            4.936496770824306e-05
+          ]
+        }
+      }
+    },
+    {
+      "file": "104e6f858428-23bf9eb916df557c-00000002.wav",
+      "wav_sha256": "6a31d090aef6f26e65156ea5627ab90f5a531d702ef99b62286f75bb8d134a7a",
+      "reference": {
+        "label": "dragging_furniture",
+        "model_score": 0.9614145159721375,
+        "probabilities": {
+          "dragging_furniture": 0.9614145159721375,
+          "footstep": 0.001338497269898653,
+          "hammering": 0.004532426130026579,
+          "instant_impact": 0.02278040163218975,
+          "normal_or_unknown": 0.0001991118915611878,
+          "vacuum_cleaner": 0.009735082276165485
+        },
+        "window_start_sample": 8000,
+        "gate_window_start_sample": 8000,
+        "signal_quality": "normal",
+        "model_version": "knok-room-pairgate-research-20261024",
+        "runtime_fingerprint": "e1e6f305d987b4789f60bc070d1c973c146f6b2ca8af3996e3e73b5193437d25",
+        "components": {
+          "global_probabilities": [
+            0.9670166969299316,
+            5.102044087834656e-05,
+            2.6990903279511258e-05,
+            0.022913143038749695,
+            0.0002002721157623455,
+            0.009791809134185314
+          ],
+          "gate_probabilities": [
+            0.9916515946388245,
+            0.001338497269898653,
+            0.004532426130026579,
+            0.0019671146292239428,
+            0.0004158055817242712,
+            9.449932986171916e-05
+          ]
+        }
+      }
+    },
+    {
+      "file": "104e6f858428-23bf9eb916df557c-00000003.wav",
+      "wav_sha256": "51d08fcd764cc258c2e450219e5155a700e5fe918344c420834b4d197e69e85e",
+      "reference": {
+        "label": "normal_or_unknown",
+        "model_score": 0.9928637146949768,
+        "probabilities": {
+          "dragging_furniture": 0.00031810777727514505,
+          "footstep": 0.004496608395129442,
+          "hammering": 2.2045645891921595e-05,
+          "instant_impact": 0.0008521018316969275,
+          "normal_or_unknown": 0.9928637146949768,
+          "vacuum_cleaner": 0.0014473164919763803
+        },
+        "window_start_sample": 4800,
+        "gate_window_start_sample": 4800,
+        "signal_quality": "normal",
+        "model_version": "knok-room-pairgate-research-20261024",
+        "runtime_fingerprint": "e1e6f305d987b4789f60bc070d1c973c146f6b2ca8af3996e3e73b5193437d25",
+        "components": {
+          "global_probabilities": [
+            0.0003190103452652693,
+            0.0016888141399249434,
+            5.418822183855809e-06,
+            0.0008545194868929684,
+            0.9956808090209961,
+            0.0014514229260385036
+          ],
+          "gate_probabilities": [
+            0.0005134213133715093,
+            0.004496608395129442,
+            2.2045645891921595e-05,
+            0.0018851712811738253,
+            0.9919874668121338,
+            0.0010952944867312908
+          ]
+        }
+      }
+    },
+    {
+      "file": "104e6f858428-23bf9eb916df557c-00000004.wav",
+      "wav_sha256": "3ad67f16b4ca0110348285ab135a52740c7af16999f78400ac2d48b25f3b3968",
+      "reference": {
+        "label": "footstep",
+        "model_score": 0.9976761937141418,
+        "probabilities": {
+          "dragging_furniture": 0.0002397349599050358,
+          "footstep": 0.9976761937141418,
+          "hammering": 0.0003067179350182414,
+          "instant_impact": 0.00018780889513436705,
+          "normal_or_unknown": 0.0015297329518944025,
+          "vacuum_cleaner": 5.9811380197061226e-05
+        },
+        "window_start_sample": 3200,
+        "gate_window_start_sample": 3200,
+        "signal_quality": "normal",
+        "model_version": "knok-room-pairgate-research-20261024",
+        "runtime_fingerprint": "e1e6f305d987b4789f60bc070d1c973c146f6b2ca8af3996e3e73b5193437d25",
+        "components": {
+          "global_probabilities": [
+            0.00048084009904414415,
+            0.9934230446815491,
+            0.0025314136873930693,
+            0.00037669119774363935,
+            0.0030682089272886515,
+            0.00011996459943475202
+          ],
+          "gate_probabilities": [
+            0.0002044199500232935,
+            0.9976761937141418,
+            0.0003067179350182414,
+            1.6151860108948313e-05,
+            0.0017832223093137145,
+            1.3236025552032515e-05
+          ]
+        }
+      }
+    },
+    {
+      "file": "104e6f858428-23bf9eb916df557c-00000006.wav",
+      "wav_sha256": "2a6e64e0d7b5c3e75689a48b56b7f0506de461505a823d994460826bc69fc0a6",
+      "reference": {
+        "label": "instant_impact",
+        "model_score": 0.983148992061615,
+        "probabilities": {
+          "dragging_furniture": 0.007331975735723972,
+          "footstep": 3.110297257080674e-05,
+          "hammering": 0.003001097124069929,
+          "instant_impact": 0.983148992061615,
+          "normal_or_unknown": 0.0024979275185614824,
+          "vacuum_cleaner": 0.003988900687545538
+        },
+        "window_start_sample": 4800,
+        "gate_window_start_sample": 4800,
+        "signal_quality": "normal",
+        "model_version": "knok-room-pairgate-research-20261024",
+        "runtime_fingerprint": "e1e6f305d987b4789f60bc070d1c973c146f6b2ca8af3996e3e73b5193437d25",
+        "components": {
+          "global_probabilities": [
+            0.007344841491430998,
+            0.0005922449636273086,
+            0.0006904269685037434,
+            0.9848741888999939,
+            0.00250231078825891,
+            0.003995900042355061
+          ],
+          "gate_probabilities": [
+            0.004174953326582909,
+            3.110297257080674e-05,
+            0.003001097124069929,
+            0.9901204109191895,
+            0.0010621999390423298,
+            0.001610258244909346
+          ]
+        }
+      }
+    },
+    {
+      "file": "104e6f858428-23bf9eb916df557c-00000008.wav",
+      "wav_sha256": "114cd8ec5c98fad78f464115db24c3a2c162d8ed0940c358224fb792923b9b49",
+      "reference": {
+        "label": "vacuum_cleaner",
+        "model_score": 0.9961708188056946,
+        "probabilities": {
+          "dragging_furniture": 0.0017964235739782453,
+          "footstep": 3.4811451769201085e-05,
+          "hammering": 9.987420668267077e-08,
+          "instant_impact": 0.001761235878802836,
+          "normal_or_unknown": 0.00023655680706724524,
+          "vacuum_cleaner": 0.9961708188056946
+        },
+        "window_start_sample": 4800,
+        "gate_window_start_sample": 4800,
+        "signal_quality": "normal",
+        "model_version": "knok-room-pairgate-research-20261024",
+        "runtime_fingerprint": "e1e6f305d987b4789f60bc070d1c973c146f6b2ca8af3996e3e73b5193437d25",
+        "components": {
+          "global_probabilities": [
+            0.0017961583798751235,
+            0.0001825805811677128,
+            2.9168861104267307e-08,
+            0.0017609758069738746,
+            0.00023652188247069716,
+            0.9960237741470337
+          ],
+          "gate_probabilities": [
+            0.0014339199988171458,
+            3.4811451769201085e-05,
+            9.987420668267077e-08,
+            0.0005703385686501861,
+            0.0002015288919210434,
+            0.9977593421936035
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,9 +1,11 @@
 package com.example.data
 
 import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.ColumnInfo
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "noise_records")
+@Entity(tableName = "noise_records", indices = [Index(value = ["deviceEventId"], unique = true)])
 data class NoiseRecord(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val timestamp: Long,
@@ -24,5 +26,13 @@ data class NoiseRecord(
     val syncId: String? = null,
     val remoteAudioPath: String? = null,
     val syncState: String = "LOCAL",
-    val soundAnalysisJson: String? = null
+    val soundAnalysisJson: String? = null,
+    val deviceEventId: String? = null,
+    val deviceMetadataJson: String? = null,
+    @ColumnInfo(defaultValue = "0") val deviceRawEdges: Long = 0,
+    @ColumnInfo(defaultValue = "0") val deviceDigitalEvents: Long = 0,
+    val deviceStartSample: Long? = null,
+    val deviceTriggerSample: Long? = null,
+    val deviceSampleCount: Long? = null,
+    @ColumnInfo(defaultValue = "0") val deviceClassificationPending: Boolean = false
 )

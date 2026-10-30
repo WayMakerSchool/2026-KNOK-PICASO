@@ -39,3 +39,11 @@ dataset/
 artifacts/
 /output/
 /tmp/
+
+.superpowers/
+**/secrets.h
+
+/runtime/
+/delivery/
+/evidence/*.log
+/evidence/*.png

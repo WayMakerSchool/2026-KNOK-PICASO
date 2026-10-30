@@ -44,12 +44,40 @@ class NoiseRepository(
         return insertedId
     }
 
+    suspend fun findDeviceEvent(eventId: String): NoiseRecord? = noiseDao.findByDeviceEventId(eventId)
+
+    suspend fun insertDeviceEvent(record: NoiseRecord): NoiseRecord {
+        // Ownership is captured before download, including explicit anonymous ownership.
+        val normalized = record.copy(
+            syncId = record.syncId ?: UUID.randomUUID().toString(),
+            syncState = if (record.userId == null) "LOCAL" else "PENDING"
+        )
+        val saved = noiseDao.persistDeviceEvent(normalized)
+        syncManager?.enqueue(saved)
+        return saved
+    }
+
+    suspend fun repairDeviceAudioPath(id: Int, path: String) = noiseDao.setRecordingPath(id, path)
+    suspend fun pendingDeviceClassifications(): List<NoiseRecord> = noiseDao.pendingDeviceClassifications()
+    suspend fun pendingDeviceClassificationsAfter(afterId: Int): List<NoiseRecord> = noiseDao.pendingDeviceClassificationsAfter(afterId)
+
+    suspend fun finishDeviceClassification(id: Int, label: String, confidence: Double, candidate: Boolean, analysisJson: String? = null) {
+        if (analysisJson == null) noiseDao.finishDeviceClassification(id, label, confidence, candidate)
+        else noiseDao.finishDeviceClassificationWithAnalysis(id, label, confidence, candidate, analysisJson)
+        noiseDao.findById(id)?.let { syncManager?.enqueue(it) }
+    }
+
     suspend fun delete(record: NoiseRecord) {
         syncManager?.deleteRemote(record)
         noiseDao.deleteRecordById(record.id)
     }
 
     suspend fun findById(id: Int): NoiseRecord? = noiseDao.findById(id)
+
+    suspend fun updateRecordNote(id: Int, note: String) {
+        noiseDao.updateRecordNote(id,note)
+        noiseDao.findById(id)?.let { syncManager?.enqueue(it) }
+    }
 
     suspend fun saveSoundAnalysis(id: Int, userId: String?, json: String) {
         if (noiseDao.saveSoundAnalysis(id, userId, json) == 0) return

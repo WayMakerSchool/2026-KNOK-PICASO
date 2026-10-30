@@ -68,7 +68,7 @@ class SoundAnalysisPersistenceTest {
             old.version = 4
         }
         val db = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(AppDatabase.MIGRATION_4_5).build()
+            .addMigrations(AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6).build()
         try {
             val saved = db.noiseDao().findById(1)!!
             assertEquals("메모", saved.note)

@@ -20,6 +20,9 @@ import com.example.data.NoiseRepository
 import com.example.data.FirebaseSyncManager
 import com.example.auth.AccountSession
 import com.example.ml.GeminiSoundAnalyzer
+import com.example.BuildConfig
+import com.example.ml.AudioClassifier
+import com.example.ml.offlineAnalysisJson
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.Dispatchers
@@ -103,6 +106,11 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
     private var analysisJob: Job? = null
 
     fun analyzeSound(record: NoiseRecord) {
+        if (BuildConfig.KNOK_CANDIDATE) {
+            _analysisErrors.value = _analysisErrors.value +
+                (record.id to "검증 앱은 맥 분석 서버로 수신된 ESP32 녹음만 분석합니다.")
+            return
+        }
         if (_analyzingRecordId.value != null || record.soundAnalysisJson != null) return
         val owner = AccountSession.userId.value
         if (record.userId != owner) return
@@ -117,6 +125,18 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
                         FirebaseSyncManager.getInstance(getApplication()).downloadAudio(current)
                     }
                     ?: error("녹음 파일을 찾을 수 없습니다. 동기화 상태를 확인해 주세요.")
+                if (BuildConfig.KNOK_V2) {
+                    val classification = withContext(Dispatchers.Default) {
+                        AudioClassifier(getApplication()).use { it.classify(File(localPath)) }
+                    }
+                    repository.update(current.copy(
+                        classificationLabel=classification.label,
+                        classificationConfidence=classification.confidence.toDouble(),
+                        isInterfloorCandidate=classification.isInterfloorCandidate,
+                        soundAnalysisJson=classification.offlineAnalysisJson(),
+                        deviceClassificationPending=false))
+                    return@launch
+                }
                 val result = soundAnalyzer.analyze(File(localPath))
                 if (AccountSession.userId.value == owner) {
                     repository.saveSoundAnalysis(current.id, owner, result.toJson())
@@ -504,7 +524,7 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateRecordNote(record: NoiseRecord, newNote: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.update(record.copy(note = newNote))
+            repository.updateRecordNote(record.id,newNote)
         }
     }
 

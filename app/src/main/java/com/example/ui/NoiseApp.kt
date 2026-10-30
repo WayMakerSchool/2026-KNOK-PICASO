@@ -71,6 +71,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -87,9 +88,11 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.testTag
 import com.example.ml.SoundAnalysis
+import com.example.ml.analysisEventIdDescription
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -117,6 +120,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.data.NoiseRecord
+import com.example.BuildConfig
 import com.example.auth.FirebaseAuthViewModel
 import com.example.auth.AccountSession
 import com.example.ui.theme.DarkBackground
@@ -136,6 +140,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.ml.analysisWindowDescription
+import com.example.ml.floorDirectionDescription
+import com.example.ml.storedClassificationSummary
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -161,12 +168,12 @@ fun NoiseApp(
     )
 
     LaunchedEffect(Unit) {
-        if (!hasMicPermission) {
+        if (!hasMicPermission && !BuildConfig.KNOK_V2) {
             launcher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
 
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(if (BuildConfig.KNOK_CANDIDATE) 5 else 0) }
     val authViewModel: FirebaseAuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 
     Scaffold(
@@ -224,7 +231,7 @@ fun NoiseApp(
                 .statusBarsPadding()
         ) {
             when (selectedTab) {
-                0 -> DashboardScreen(
+                0 -> if (BuildConfig.KNOK_V2) EspAlwaysRecordingScreen(viewModel = espRecorderViewModel) else DashboardScreen(
                     viewModel = viewModel,
                     espRecorderViewModel = espRecorderViewModel,
                     authViewModel = authViewModel,
@@ -234,7 +241,7 @@ fun NoiseApp(
                 1 -> LogScreen(viewModel = viewModel)
                 2 -> RecordingScreen(viewModel = viewModel)
                 3 -> EspWifiDeviceScreen(viewModel = espRecorderViewModel)
-                4 -> GuideScreen(viewModel = viewModel)
+                4 -> if (BuildConfig.KNOK_V2) V2DemoGuideScreen() else GuideScreen(viewModel = viewModel)
                 5 -> EspAlwaysRecordingScreen(viewModel = espRecorderViewModel)
             }
         }
@@ -303,9 +310,9 @@ fun GlassCard(
         modifier = modifier,
         shape = shape,
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.05f)
+            containerColor = if (BuildConfig.KNOK_V3) com.example.ui.theme.DarkSurface else Color.White.copy(alpha = 0.05f)
         ),
-        border = border,
+        border = if (BuildConfig.KNOK_V3) BorderStroke(1.dp, com.example.ui.theme.SlateBorder.copy(alpha = .45f)) else border,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
@@ -317,6 +324,19 @@ fun GlassCard(
 
 @Composable
 fun AccountCard(viewModel: FirebaseAuthViewModel) {
+    if (BuildConfig.KNOK_CANDIDATE) {
+        GlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(if (BuildConfig.KNOK_V2) "KNOK V2 · 기기 내 저장" else "KNOK 실험 앱 · 기기 내 저장", color = TextPrimary, fontWeight = FontWeight.Bold)
+                Text(
+                    "로그인 없이 녹음과 소리 분류를 사용할 수 있어요. 기록은 이 앱에 저장됩니다.",
+                    color = TextSecondary,
+                    fontSize = 12.sp
+                )
+            }
+        }
+        return
+    }
     val context = LocalContext.current
     val authState by viewModel.uiState.collectAsState()
 
@@ -963,6 +983,7 @@ fun Esp32RecordingCard(viewModel: EspRecorderViewModel) {
     val connectionState by viewModel.connectionState.collectAsState()
     val status by viewModel.status.collectAsState()
     val isBusy by viewModel.isBusy.collectAsState()
+    val automatic by viewModel.alwaysRecordingEnabled.collectAsState()
     val message by viewModel.message.collectAsState()
     var baseUrlText by remember { mutableStateOf(savedBaseUrl) }
 
@@ -979,7 +1000,8 @@ fun Esp32RecordingCard(viewModel: EspRecorderViewModel) {
         EspRecorderConnectionState.RECORDING -> QuietAlert
     }
     val durationSeconds = (status?.durationMs ?: 0L) / 1000L
-    val recordingProgress = ((status?.durationMs ?: 0L).toFloat() / 30_000f).coerceIn(0f, 1f)
+    val limitMs=(status?.recordingLimitMs ?: if(BuildConfig.KNOK_V2)15000L else 30000L).coerceAtLeast(1000)
+    val recordingProgress = ((status?.durationMs ?: 0L).toFloat() / limitMs).coerceIn(0f, 1f)
 
     GlassCard(
         modifier = Modifier
@@ -1056,7 +1078,7 @@ fun Esp32RecordingCard(viewModel: EspRecorderViewModel) {
                 placeholder = { Text("http://192.168.0.123 또는 http://knok-esp32.local") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                enabled = !isBusy && connectionState != EspRecorderConnectionState.RECORDING,
+                enabled = canEditDeviceEndpoint(isBusy,automatic,connectionState),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = QuietPrimary,
                     unfocusedBorderColor = SlateBorder,
@@ -1081,7 +1103,7 @@ fun Esp32RecordingCard(viewModel: EspRecorderViewModel) {
                         viewModel.setBaseUrl(baseUrlText)
                         viewModel.checkConnection()
                     },
-                    enabled = !isBusy && baseUrlText.isNotBlank(),
+                    enabled = canEditDeviceEndpoint(isBusy,automatic,connectionState) && baseUrlText.isNotBlank(),
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
@@ -1098,7 +1120,7 @@ fun Esp32RecordingCard(viewModel: EspRecorderViewModel) {
                             viewModel.startRecording()
                         }
                     },
-                    enabled = !isBusy && (connectionState == EspRecorderConnectionState.RECORDING || baseUrlText.isNotBlank()),
+                    enabled = !isBusy && !automatic && (connectionState == EspRecorderConnectionState.RECORDING || baseUrlText.isNotBlank()),
                     modifier = Modifier.weight(1.35f),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -1131,7 +1153,7 @@ fun Esp32RecordingCard(viewModel: EspRecorderViewModel) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "녹음 시간 ${formatSeconds(durationSeconds)} · 최대 30초 · ${status?.bytesWritten ?: 0L} bytes",
+                    text = "녹음 시간 ${formatSeconds(durationSeconds)} · ${recordingLimitDescription(limitMs)} · ${status?.bytesWritten ?: 0L} bytes",
                     color = TextSecondary,
                     fontSize = 10.sp,
                     fontFamily = FontFamily.Monospace
@@ -1362,7 +1384,14 @@ fun LogScreen(viewModel: NoiseViewModel) {
     val exceededRecords by viewModel.exceededRecords.collectAsState()
 
     var showOnlyExceeded by remember { mutableStateOf(false) }
+    var confirmClear by remember { mutableStateOf(false) }
     val recordList = if (showOnlyExceeded) exceededRecords else allRecords
+
+    if(confirmClear && BuildConfig.KNOK_V3) AlertDialog(onDismissRequest={confirmClear=false},
+        title={Text("모든 기록을 목록에서 삭제할까요?")},
+        text={Text("이 앱의 전체 기록이 목록에서 사라지고 되돌릴 수 없어요. 원본 파일은 저장공간에 남을 수 있어요.")},
+        confirmButton={TextButton(onClick={confirmClear=false;viewModel.clearAllData()}){Text("전체 삭제")}},
+        dismissButton={TextButton(onClick={confirmClear=false}){Text("취소")}})
 
     Column(
         modifier = Modifier
@@ -1379,19 +1408,19 @@ fun LogScreen(viewModel: NoiseViewModel) {
         ) {
             Column {
                 Text(
-                    text = "층간소음 기록대장",
+                    text = if(BuildConfig.KNOK_V3) "소음 기록대장" else "층간소음 기록대장",
                     color = TextPrimary,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "법적 분쟁 시 객관적 증명 자료로 활용해보세요.",
+                    text = if(BuildConfig.KNOK_V3) "기록을 확인하세요. 법적 판단은 별도 확인이 필요해요." else "법적 분쟁 시 객관적 증명 자료로 활용해보세요.",
                     color = TextSecondary,
                     fontSize = 11.sp
                 )
             }
 
-            IconButton(onClick = { viewModel.clearAllData() }) {
+            IconButton(onClick = { if(BuildConfig.KNOK_V3) confirmClear=true else viewModel.clearAllData() }) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Clear All Records",
@@ -1419,7 +1448,7 @@ fun LogScreen(viewModel: NoiseViewModel) {
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "층간소음 기준 초과 로그만 보기",
+                    text = if(BuildConfig.KNOK_V3) "기준이 표시된 기록만 보기" else "층간소음 기준 초과 로그만 보기",
                     color = TextPrimary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium
@@ -1462,7 +1491,9 @@ fun LogScreen(viewModel: NoiseViewModel) {
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = if (showOnlyExceeded) "기준 초과된 층간소음 기록이 없습니다." else "측정된 소음/진동 기록이 없습니다.",
+                        text = if (showOnlyExceeded) {
+                            if(BuildConfig.KNOK_V3) "기준이 표시된 기록이 없습니다." else "기준 초과된 층간소음 기록이 없습니다."
+                        } else "측정된 소음/진동 기록이 없습니다.",
                         color = TextSecondary,
                         fontSize = 13.sp,
                         textAlign = TextAlign.Center
@@ -1491,6 +1522,12 @@ fun LogScreen(viewModel: NoiseViewModel) {
 
 @Composable
 fun LogRecordCard(record: NoiseRecord, onDelete: () -> Unit) {
+    var confirmDelete by remember(record.id) { mutableStateOf(false) }
+    if(confirmDelete && BuildConfig.KNOK_V3) AlertDialog(onDismissRequest={confirmDelete=false},
+        title={Text("이 기록을 삭제할까요?")},
+        text={Text("이 앱의 기록과 원본 녹음이 삭제돼요. 삭제 후에는 되돌릴 수 없어요.")},
+        confirmButton={TextButton(onClick={confirmDelete=false;onDelete()}){Text("삭제")}},
+        dismissButton={TextButton(onClick={confirmDelete=false}){Text("취소")}})
     GlassCard(
         border = BorderStroke(1.dp, if (record.isExceeded) QuietAlert.copy(alpha = 0.4f) else Color.White.copy(alpha = 0.08f)),
         shape = RoundedCornerShape(16.dp),
@@ -1512,7 +1549,7 @@ fun LogRecordCard(record: NoiseRecord, onDelete: () -> Unit) {
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "층간소음 기준 초과!",
+                                text = if(BuildConfig.KNOK_V3) "기준 표시" else "층간소음 기준 초과!",
                                 color = QuietAlert,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
@@ -1542,7 +1579,7 @@ fun LogRecordCard(record: NoiseRecord, onDelete: () -> Unit) {
                 }
 
                 IconButton(
-                    onClick = onDelete,
+                    onClick = { if(BuildConfig.KNOK_V3) confirmDelete=true else onDelete() },
                     modifier = Modifier.size(24.dp)
                 ) {
                     Icon(
@@ -1562,7 +1599,7 @@ fun LogRecordCard(record: NoiseRecord, onDelete: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text(text = "최대 소음", color = TextSecondary, fontSize = 11.sp)
+                    Text(text = if(BuildConfig.KNOK_V3 && record.recordingSource=="ESP32") "최대 소음 · 상대값" else "최대 소음", color = TextSecondary, fontSize = 11.sp)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "${String.format(Locale.getDefault(), "%.1f", record.maxDb)} dB",
@@ -1573,7 +1610,7 @@ fun LogRecordCard(record: NoiseRecord, onDelete: () -> Unit) {
                 }
 
                 Column {
-                    Text(text = "평균 소음", color = TextSecondary, fontSize = 11.sp)
+                    Text(text = if(BuildConfig.KNOK_V3 && record.recordingSource=="ESP32") "평균 소음 · 상대값" else "평균 소음", color = TextSecondary, fontSize = 11.sp)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "${String.format(Locale.getDefault(), "%.1f", record.avgDb)} dB",
@@ -1587,7 +1624,8 @@ fun LogRecordCard(record: NoiseRecord, onDelete: () -> Unit) {
                     Text(text = "바닥 진동", color = TextSecondary, fontSize = 11.sp)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "${String.format(Locale.getDefault(), "%.3f", record.maxVibration)} m/s²",
+                        text = if (record.recordingSource == "ESP32") "디지털 ${record.deviceDigitalEvents}회"
+                            else "${String.format(Locale.getDefault(), "%.3f", record.maxVibration)} m/s²",
                         color = if (record.isVibeExceeded) QuietAlert else TextPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
@@ -1614,6 +1652,7 @@ fun LogRecordCard(record: NoiseRecord, onDelete: () -> Unit) {
                     "hammering" -> "망치/타격"
                     "vacuum_cleaner" -> "청소기"
                     "normal_or_unknown" -> "일반/미분류 소리"
+                    "analysis_failed" -> "분석 실패 · 다시 분석 필요"
                     else -> record.classificationLabel
                 }
                 val confidence = String.format(
@@ -1632,11 +1671,7 @@ fun LogRecordCard(record: NoiseRecord, onDelete: () -> Unit) {
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        text = if (record.isInterfloorCandidate) {
-                            "AI 감지: $classificationName · 층간소음 후보 · 신뢰도 ${confidence}%"
-                        } else {
-                            "AI 감지: $classificationName · 신뢰도 ${confidence}%"
-                        },
+                        text = storedClassificationSummary(record.classificationLabel,record.classificationConfidence,record.soundAnalysisJson),
                         color = if (record.isInterfloorCandidate) QuietAlert else QuietPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
@@ -1712,7 +1747,8 @@ fun RecordingScreen(viewModel: NoiseViewModel) {
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "소리 분석을 누르면 녹음이 Google 서버로 전송됩니다. AI 결과는 오인식될 수 있습니다. 5분·10MB 이하 지원.",
+                text = if (BuildConfig.KNOK_V2) "녹음된 소리는 이 앱에서 오프라인으로 자동 분류합니다. 소리 종류의 추정이며 발생 위치를 확정하지 않습니다."
+                    else "소리 분석을 누르면 녹음이 Google 서버로 전송됩니다. AI 결과는 오인식될 수 있습니다. 5분·10MB 이하 지원.",
                 color = TextSecondary,
                 fontSize = 11.sp
             )
@@ -1844,7 +1880,7 @@ fun RecordingScreen(viewModel: NoiseViewModel) {
                             SoundAnalysisPanel(
                                 record = record,
                                 isAnalyzing = analyzingRecordId == record.id,
-                                canAnalyze = analyzingRecordId == null,
+                                canAnalyze = analyzingRecordId == null && !record.deviceClassificationPending,
                                 error = analysisErrors[record.id],
                                 onAnalyze = { viewModel.analyzeSound(record) }
                             )
@@ -1912,13 +1948,32 @@ internal fun SoundAnalysisPanel(
             Spacer(modifier = Modifier.height(4.dp))
             Text("다른 가능성: ${analysis.alternative}", color = TextSecondary, fontSize = 11.sp)
             Text("소리의 종류에 대한 추정이며 발생 위치·원인을 확정하지 않습니다.", color = TextSecondary, fontSize = 10.sp)
+            analysisWindowDescription(record.soundAnalysisJson)?.let {
+                Text(it,color=TextSecondary,fontSize=11.sp)
+            }
+            floorDirectionDescription(record.soundAnalysisJson)?.let {
+                Text(it, color = QuietPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Text("미니어처 개발 시험용 추정이며 실제 건물 성능을 뜻하지 않습니다.", color = TextSecondary, fontSize = 10.sp)
+            }
+            analysisEventIdDescription(record.soundAnalysisJson)?.let {
+                Text(it, color = TextSecondary, fontSize = 10.sp)
+            }
+            Text("분류 모델: ${analysis.model}",color=TextSecondary,fontSize=10.sp)
         } else {
-            OutlinedButton(
-                onClick = onAnalyze,
-                enabled = canAnalyze && !isAnalyzing && record.soundAnalysisJson == null,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (isAnalyzing) "소리 분석 중…" else if (error != null) "소리 분석 다시 시도" else "소리 분석")
+            if (record.deviceClassificationPending) {
+                Text("녹음 저장 완료 · 자동 분석 대기/진행 중…", color = QuietPrimary, fontSize = 12.sp)
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = QuietPrimary)
+            }
+            if (BuildConfig.KNOK_CANDIDATE) {
+                Text("검증 앱은 맥 분석 서버로 수신된 ESP32 녹음만 분석합니다.", color = TextSecondary, fontSize = 11.sp)
+            } else {
+                OutlinedButton(
+                    onClick = onAnalyze,
+                    enabled = canAnalyze && !isAnalyzing && record.soundAnalysisJson == null,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (isAnalyzing) "소리 분석 중…" else if (error != null) "소리 분석 다시 시도" else "소리 분석")
+                }
             }
             if (isAnalyzing) {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = QuietPrimary)
@@ -2229,7 +2284,7 @@ fun QuietBottomNavigation(selectedTab: Int, onTabSelected: (Int) -> Unit) {
             )
             BottomNavItem(
                 icon = Icons.Default.Info,
-                label = "공간가이드",
+                label = if (BuildConfig.KNOK_V2) "시연안내" else "공간가이드",
                 isSelected = selectedTab == 4,
                 modifier = Modifier.weight(1f),
                 onClick = { onTabSelected(4) }

@@ -6,7 +6,11 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.BuildConfig
 import com.example.data.AppDatabase
+import com.example.data.EspEventImporter
+import com.example.data.EspDeviceAutoSession
+import com.example.auth.AccountSession
 import com.example.data.EspRecorderClient
 import com.example.data.EspRecorderStatus
 import com.example.data.NoiseRecord
@@ -14,6 +18,12 @@ import com.example.data.NoiseRepository
 import com.example.data.FirebaseSyncManager
 import com.example.ml.AudioClassificationResult
 import com.example.ml.AudioClassifier
+import com.example.ml.offlineAnalysisJson
+import com.example.ml.soundLabelName
+import com.example.ml.classificationSummary
+import com.example.ml.MacAnalysisClient
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -32,6 +42,11 @@ enum class EspRecorderConnectionState {
     RECORDING
 }
 
+fun canEditDeviceEndpoint(busy: Boolean,automatic: Boolean,connection: EspRecorderConnectionState): Boolean =
+    !busy && !automatic && connection!=EspRecorderConnectionState.RECORDING
+
+fun recordingLimitDescription(limitMs: Long): String = "최대 ${limitMs.coerceAtLeast(1000)/1000}초"
+
 enum class EspAlwaysRecordingState {
     OFF,
     CHECKING,
@@ -40,6 +55,15 @@ enum class EspAlwaysRecordingState {
     GRACE_PERIOD,
     SAVING,
     ERROR
+}
+
+/** Active storage damage/backpressure is not healthy monitoring; old counters are historical. */
+fun deviceAutoState(status: EspRecorderStatus): EspAlwaysRecordingState = when {
+    !status.ready || status.quarantinedSlots > 0 || status.waitingForSpace > 0 -> EspAlwaysRecordingState.ERROR
+    !status.autoEnabled -> EspAlwaysRecordingState.CHECKING
+    status.recording -> EspAlwaysRecordingState.RECORDING
+    status.finalizing -> EspAlwaysRecordingState.SAVING
+    else -> EspAlwaysRecordingState.MONITORING
 }
 
 /**
@@ -55,6 +79,7 @@ class EspRecorderViewModel(application: Application) : AndroidViewModel(applicat
         const val AUTO_GRACE_PERIOD_MS = 3_000L
         private const val PREFS_NAME = "esp32_recorder"
         private const val BASE_URL_KEY = "base_url"
+        private const val RECEIVER_POSITION_KEY = "receiver_position"
     }
 
     private val client = EspRecorderClient()
@@ -63,7 +88,25 @@ class EspRecorderViewModel(application: Application) : AndroidViewModel(applicat
         FirebaseSyncManager.getInstance(application)
     )
     private val preferences = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    private val audioClassifier: AudioClassifier? = runCatching {
+    private val macAnalysisClient = if (BuildConfig.KNOK_CANDIDATE) MacAnalysisClient() else null
+    private val deferredMacAnalysis = DeferredAnalysisGate()
+    private val _receiverPosition = MutableStateFlow(preferences.getString(RECEIVER_POSITION_KEY, "") ?: "")
+    val receiverPosition = _receiverPosition.asStateFlow()
+    private val _macServerReady = MutableStateFlow<Boolean?>(null)
+    val macServerReady = _macServerReady.asStateFlow()
+    private val _detectionThreshold = MutableStateFlow(preferences.getFloat("detection_threshold", 70f).toDouble())
+    val detectionThreshold = _detectionThreshold.asStateFlow()
+    private val _analysisSummary = MutableStateFlow("녹음이 저장되면 자동으로 소리를 분류합니다.")
+    val analysisSummary = _analysisSummary.asStateFlow()
+
+    fun setDetectionThreshold(value: Double) {
+        if (_alwaysRecordingEnabled.value || (_status.value?.let { it.protocolVersion>=2 && it.autoEnabled }==true) ||
+            (_alwaysRecordingState.value !in setOf(EspAlwaysRecordingState.OFF,EspAlwaysRecordingState.ERROR))) return
+        if (!value.isFinite()) return
+        _detectionThreshold.value = value.coerceIn(30.0, 120.0)
+        preferences.edit().putFloat("detection_threshold", _detectionThreshold.value.toFloat()).apply()
+    }
+    private val audioClassifier: AudioClassifier? = if (BuildConfig.KNOK_CANDIDATE) null else runCatching {
         AudioClassifier(application)
     }.onFailure { error ->
         Log.w("EspRecorderViewModel", "오디오 분류기를 불러오지 못했습니다.", error)
@@ -73,6 +116,26 @@ class EspRecorderViewModel(application: Application) : AndroidViewModel(applicat
         preferences.getString(BASE_URL_KEY, DEFAULT_BASE_URL) ?: DEFAULT_BASE_URL
     )
     val baseUrl = _baseUrl.asStateFlow()
+
+    fun setReceiverPosition(value: String) {
+        if (value !in setOf("", "lower", "upper")) return
+        _receiverPosition.value = value
+        preferences.edit().putString(RECEIVER_POSITION_KEY, value).apply()
+    }
+
+    fun checkMacAnalysisServer() {
+        if (!BuildConfig.KNOK_CANDIDATE) return
+        viewModelScope.launch {
+            _macServerReady.value = withContext(Dispatchers.IO) {
+                macAnalysisClient?.isHealthy() == true
+            }
+        }
+    }
+
+    fun retryDeferredMacAnalyses() {
+        deferredMacAnalysis.retryAll()
+        _analysisSummary.value = "맥 분석 대기 녹음을 다시 확인합니다."
+    }
 
     private val _connectionState = MutableStateFlow(EspRecorderConnectionState.DISCONNECTED)
     val connectionState = _connectionState.asStateFlow()
@@ -98,8 +161,13 @@ class EspRecorderViewModel(application: Application) : AndroidViewModel(applicat
     private var pollingJob: Job? = null
     private var operationJob: Job? = null
     private var alwaysMonitoringJob: Job? = null
+    private var detachedRecoveryInProgress = false
 
     fun setBaseUrl(value: String) {
+        if(!canEditDeviceEndpoint(_isBusy.value,_alwaysRecordingEnabled.value,_connectionState.value)) {
+            _message.value="주소를 바꾸려면 상시/수동 녹음을 중지한 뒤 새 주소로 연결해 주세요."
+            return
+        }
         _baseUrl.value = value
         preferences.edit().putString(BASE_URL_KEY, value.trim()).apply()
     }
@@ -188,7 +256,122 @@ class EspRecorderViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    private val eventImporter by lazy {
+        EspEventImporter(client, repository, getApplication<Application>().filesDir)
+    }
+    private var deviceAutoSession = false
+
+    init {
+        // Persisted pending flags resume inference after a process restart.
+        viewModelScope.launch {
+            while (isActive) {
+                var afterId=0
+                while(isActive) {
+                val pending = withContext(Dispatchers.IO) { repository.pendingDeviceClassificationsAfter(afterId) }
+                if(pending.isEmpty()) break
+                for (record in pending) {
+                    if (deferredMacAnalysis.isDeferred(record.id)) continue
+                    val attemptGeneration=deferredMacAnalysis.generation
+                    val useMacModels = BuildConfig.KNOK_CANDIDATE &&
+                        record.recordingSource == "ESP32" && record.deviceEventId != null
+                    _analysisSummary.value = if (useMacModels) "녹음 #${record.id} · 맥 소리/층 모델 분석 중…"
+                        else "녹음 #${record.id} · 오프라인 AI 분석 중…"
+                    try {
+                        val sourceFile = File(requireNotNull(record.recordingPath))
+                        val (classification, analysisJson) = withContext(if (useMacModels) Dispatchers.IO else Dispatchers.Default) {
+                            if (useMacModels) {
+                                val result = requireNotNull(macAnalysisClient).analyze(
+                                    sourceFile, _receiverPosition.value, requireNotNull(record.deviceEventId)
+                                )
+                                result.toAudioClassificationResult() to result.toStoredAnalysisJson()
+                            } else {
+                                val classifier = audioClassifier ?: error("분류 모델을 열 수 없습니다.")
+                                val result = classifier.classify(sourceFile)
+                                result to result.offlineAnalysisJson()
+                            }
+                        }
+                        val text = classification.classificationSummary()
+                        repository.finishDeviceClassification(record.id, classification.label,
+                            classification.confidence.toDouble(), classification.isInterfloorCandidate,
+                            analysisJson)
+                        _analysisSummary.value = if (useMacModels) "분석 완료 · $text\n층 방향 결과는 녹음 상세에서 확인할 수 있습니다."
+                            else "분석 완료 · $text\n녹음목록에서 원본과 결과를 확인할 수 있습니다."
+                    } catch (cancel: CancellationException) { throw cancel
+                    } catch (error: Exception) {
+                        Log.w("EspRecorderViewModel", "오프라인 분류 실패", error)
+                        if (useMacModels) {
+                            deferredMacAnalysis.deferAfterFailure(record.id,attemptGeneration)
+                            _analysisSummary.value = "맥 분석을 마치지 못했습니다. 연결과 원본을 확인한 뒤 ‘맥 분석 재시도’를 눌러 주세요."
+                        } else {
+                            repository.finishDeviceClassification(record.id, "analysis_failed", 0.0, false)
+                            _analysisSummary.value = "분석 실패 · 원본 음원은 보존했습니다. 녹음목록에서 다시 시도해 주세요."
+                        }
+                    }
+                }
+                afterId=pending.last().id
+                }
+                delay(500)
+            }
+        }
+    }
+
     fun startAlwaysRecording() {
+        if (_alwaysRecordingEnabled.value || _isBusy.value) return
+        if (_connectionState.value == EspRecorderConnectionState.RECORDING) {
+            _message.value = "진행 중인 수동 녹음을 먼저 저장해 주세요."
+            return
+        }
+        operationJob?.cancel()
+        operationJob = viewModelScope.launch {
+            _isBusy.value = true
+            try {
+                val current = client.getStatus(_baseUrl.value)
+                applyStatus(current)
+                if (current.protocolVersion >= 2 && current.eventQueueAvailable) {
+                    if (!current.ready) throw IllegalStateException("ESP32 준비 확인 필요: ${current.message}")
+                    deviceAutoSession = true
+                    _alwaysRecordingEnabled.value = true
+                    _alwaysRecordingState.value = EspAlwaysRecordingState.MONITORING
+                    pollingJob?.cancel()
+                    alwaysMonitoringJob = viewModelScope.launch {
+                        var failed = false
+                        try {
+                            EspDeviceAutoSession(client, eventImporter).run(
+                                _baseUrl.value, _detectionThreshold.value,
+                                { AccountSession.userId.value }, { _alwaysRecordingEnabled.value },
+                                { status ->
+                                    applyStatus(status)
+                                    _alwaysRecordingState.value = deviceAutoState(status)
+                                }, { text -> _message.value = text },
+                                onUnavailable = {
+                                    _connectionState.value = EspRecorderConnectionState.CHECKING
+                                    _alwaysRecordingState.value = EspAlwaysRecordingState.CHECKING
+                                }
+                            )
+                        } catch (cancel: CancellationException) { throw cancel
+                        } catch (error: Exception) {
+                            failed = true
+                            _message.value = error.message ?: "자동 감지 연결 확인 필요"
+                        } finally {
+                            _alwaysRecordingEnabled.value = false
+                            _isBusy.value = false
+                            _alwaysRecordingState.value = if (failed) EspAlwaysRecordingState.ERROR else EspAlwaysRecordingState.OFF
+                            deviceAutoSession = false
+                        }
+                    }
+                    _message.value = "ESP32에서 연속 감지 중 · WAV 수신과 AI 분류를 별도로 진행합니다."
+                } else {
+                    _isBusy.value = false
+                    startLegacyAlwaysRecording()
+                }
+            } catch (error: Exception) {
+                _alwaysRecordingState.value = EspAlwaysRecordingState.ERROR
+                _message.value = error.message ?: "자동 감지를 시작할 수 없습니다."
+            } finally { _isBusy.value = false }
+        }
+    }
+
+    private fun startLegacyAlwaysRecording() {
         if (_alwaysRecordingEnabled.value || _isBusy.value) return
         if (_connectionState.value == EspRecorderConnectionState.RECORDING) {
             _alwaysRecordingState.value = EspAlwaysRecordingState.ERROR
@@ -429,12 +612,41 @@ class EspRecorderViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     fun stopAlwaysRecording() {
+        if (deviceAutoSession) _isBusy.value = true
         _alwaysRecordingEnabled.value = false
         if (alwaysMonitoringJob?.isActive != true) {
             _alwaysRecordingState.value = EspAlwaysRecordingState.OFF
             _message.value = "상시 녹음을 중지했습니다."
         } else {
             _message.value = "상시 녹음 종료 중... 현재 녹음은 안전하게 저장합니다."
+        }
+    }
+
+    /** Only requested after reconnecting to a device that last reported auto detection enabled. */
+    fun stopDetachedDeviceAuto(stopIfRunning: Boolean=true) {
+        if(detachedRecoveryInProgress || _alwaysRecordingEnabled.value || _isBusy.value || alwaysMonitoringJob?.isActive==true) return
+        detachedRecoveryInProgress=true
+        operationJob?.cancel()
+        operationJob=viewModelScope.launch {
+            _isBusy.value=true
+            _alwaysRecordingState.value=EspAlwaysRecordingState.CHECKING
+            try {
+                pollingJob?.cancelAndJoin()
+                pollingJob=null
+                val status=EspDeviceAutoSession(client,eventImporter).stopDetachedDeviceAuto(
+                    _baseUrl.value,AccountSession.userId.value,stopIfRunning,{ applyStatus(it) })
+                applyStatus(status)
+                _alwaysRecordingState.value=EspAlwaysRecordingState.OFF
+                _message.value=if(stopIfRunning) "기기 감지 중지와 대기 녹음 저장을 확인했어요." else "대기 녹음 수신과 기기 상태를 확인했어요."
+            } catch(cancel: CancellationException) { throw cancel
+            } catch(error: Exception) {
+                _alwaysRecordingState.value=EspAlwaysRecordingState.ERROR
+                _message.value=(if(stopIfRunning) "기기 감지 중지를 확인하지 못했어요. " else "대기 녹음 수신을 확인하지 못했어요. ")+error.message.orEmpty()
+                if(_status.value?.let { it.recording && !it.autoEnabled }==true) startPolling()
+            } finally {
+                _isBusy.value=false
+                detachedRecoveryInProgress=false
+            }
         }
     }
 
@@ -447,23 +659,25 @@ class EspRecorderViewModel(application: Application) : AndroidViewModel(applicat
                     val previousStatus = _status.value
                     val currentStatus = client.getStatus(_baseUrl.value)
                     applyStatus(currentStatus)
-                    if (currentStatus.recording) {
+                    if (currentStatus.recording || currentStatus.finalizing) {
                         _message.value = "ESP32 녹음 중 · ${currentStatus.durationMs / 1000}초"
-                    } else if (previousStatus?.recording == true &&
+                    } else if ((previousStatus?.recording == true || previousStatus?.finalizing == true) &&
                         (currentStatus.hasRecording || currentStatus.bytesWritten > 44L)
                     ) {
-                        // The firmware stops automatically at its 30-second safety limit.
+                        // Import at the limit advertised by this firmware.
                         // Import that file immediately so a new session cannot overwrite it.
                         _isBusy.value = true
                         try {
                             saveLatestRecording(currentStatus, note = "자동 종료")
-                            _message.value = "30초 제한으로 ESP32 녹음이 종료되어 WAV를 자동 저장했습니다."
+                            _message.value = "${recordingLimitDescription(currentStatus.recordingLimitMs)} 제한으로 ESP32 녹음이 종료되어 WAV를 자동 저장했습니다."
+                        } catch (cancel: CancellationException) { throw cancel
                         } catch (saveError: Exception) {
                             _message.value = saveError.message ?: "자동 종료된 ESP32 녹음을 저장하지 못했습니다."
                         } finally {
-                            _isBusy.value = false
+                            if(!detachedRecoveryInProgress) _isBusy.value = false
                         }
                     }
+                } catch (cancel: CancellationException) { throw cancel
                 } catch (error: Exception) {
                     // Keep the recording state visible. The device has its own 30-second
                     // safety limit, so a temporary status timeout does not stop the device.
@@ -474,6 +688,12 @@ class EspRecorderViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     private suspend fun saveLatestRecording(status: EspRecorderStatus, note: String) {
+        if (status.protocolVersion >= 2 && status.eventQueueAvailable) {
+            val completed = eventImporter.finishPending(_baseUrl.value, AccountSession.userId.value, status)
+            applyStatus(completed)
+            return
+        }
+
         val destination = File(
             getApplication<Application>().filesDir,
             "esp32_rec_${System.currentTimeMillis()}.wav"
@@ -518,7 +738,8 @@ class EspRecorderViewModel(application: Application) : AndroidViewModel(applicat
                     recordingSource = "ESP32",
                     classificationLabel = classification?.label ?: "unclassified",
                     classificationConfidence = classification?.confidence?.toDouble() ?: 0.0,
-                    isInterfloorCandidate = classification?.isInterfloorCandidate ?: false
+                    isInterfloorCandidate = classification?.isInterfloorCandidate ?: false,
+                    soundAnalysisJson = classification?.offlineAnalysisJson()
                 )
             )
         } catch (error: Exception) {
@@ -532,6 +753,7 @@ class EspRecorderViewModel(application: Application) : AndroidViewModel(applicat
         classification: AudioClassificationResult?
     ): String {
         if (classification == null) return sourceNote
+        if(classification.signalQuality!="normal")return "$sourceNote · ${classification.classificationSummary()}"
         val confidence = String.format(
             Locale.getDefault(),
             "%.0f",
@@ -543,7 +765,7 @@ class EspRecorderViewModel(application: Application) : AndroidViewModel(applicat
     private fun applyStatus(newStatus: EspRecorderStatus) {
         _status.value = newStatus
         _currentLevelDb.value = newStatus.levelDb
-        _connectionState.value = if (newStatus.recording) {
+        _connectionState.value = if (newStatus.recording || newStatus.finalizing) {
             EspRecorderConnectionState.RECORDING
         } else if (newStatus.wifiConnected) {
             EspRecorderConnectionState.CONNECTED

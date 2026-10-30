@@ -1,0 +1,34 @@
+{
+  "base_url": "http://192.168.219.106",
+  "device_id": "104e6f858428",
+  "boot_id": "23bf9eb916df557c",
+  "model_version": "knok-room-pairgate-research-20261024",
+  "events": [
+    {
+      "id": "104e6f858428-23bf9eb916df557c-0000008d",
+      "wav_sha256": "4216b7ae261f6950f4f62ceec6efaa985028601506c10895f49a04a4589b6ad3",
+      "reference_probabilities": {
+        "dragging_furniture": 0.008861782029271126,
+        "footstep": 0.13173876702785492,
+        "hammering": 0.016736961901187897,
+        "instant_impact": 0.822860836982727,
+        "normal_or_unknown": 0.019407982006669044,
+        "vacuum_cleaner": 0.00039368553552776575
+      },
+      "reference_model_label": "instant_impact"
+    },
+    {
+      "id": "104e6f858428-23bf9eb916df557c-0000008e",
+      "wav_sha256": "ba816ac9f8e73db3107e9a47782e3678999e03336bad90a5d05acc2ea75a185c",
+      "reference_probabilities": {
+        "dragging_furniture": 0.03049234300851822,
+        "footstep": 1.120170873036841e-05,
+        "hammering": 0.9687917828559875,
+        "instant_impact": 0.0006800385308451951,
+        "normal_or_unknown": 1.1371479558874853e-05,
+        "vacuum_cleaner": 1.3260836567496881e-05
+      },
+      "reference_model_label": "hammering"
+    }
+  ]
+}

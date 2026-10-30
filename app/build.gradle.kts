@@ -11,9 +11,13 @@ plugins {
   alias(libs.plugins.secrets)
 }
 
+val knokV3 = providers.gradleProperty("knokV3").orNull == "true"
+val knokV2 = !knokV3 && providers.gradleProperty("knokV2").orNull == "true"
+val knokCandidate = knokV3 || knokV2 || providers.gradleProperty("knokCandidate").orNull == "true"
+
 // Keep local builds working until Firebase's google-services.json is supplied.
 // Once the file is placed in app/, the normal Google Services resources are generated.
-if (file("google-services.json").exists()) {
+if (!knokCandidate && file("google-services.json").exists()) {
   apply(plugin = "com.google.gms.google-services")
 }
 
@@ -22,11 +26,22 @@ android {
   compileSdk = 36
 
   defaultConfig {
-    applicationId = "com.aistudio.quietneighbors.gspqzy"
+    applicationId = when {
+      knokV3 -> "com.aistudio.quietneighbors.gspqzy.v3"
+      knokV2 -> "com.aistudio.quietneighbors.gspqzy.v2overnight"
+      knokCandidate -> "com.aistudio.quietneighbors.gspqzy.candidate"
+      else -> "com.aistudio.quietneighbors.gspqzy"
+    }
+    manifestPlaceholders["knokAppLabel"] = if (knokV3) "KNOK V3" else if (knokV2) "KNOK V2 환경 검증" else if (knokCandidate) "KNOK 검증" else "@string/app_name"
+    manifestPlaceholders["knokAppIcon"] = if (knokV3) "@drawable/knok_v3_launcher" else "@mipmap/ic_launcher"
+    manifestPlaceholders["knokRoundIcon"] = if (knokV3) "@drawable/knok_v3_launcher" else "@mipmap/ic_launcher_round"
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = if (knokV3) 5 else if (knokV2) 4 else 1
+    versionName = if (knokV3) "3.2.2-model-score" else if (knokV2) "2.3-room-verification" else "1.0"
+    buildConfigField("boolean", "KNOK_V3", knokV3.toString())
+    buildConfigField("boolean", "KNOK_CANDIDATE", knokCandidate.toString())
+    buildConfigField("boolean", "KNOK_V2", knokV2.toString())
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -134,6 +149,7 @@ dependencies {
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)
   testImplementation(libs.junit)
+  testImplementation("com.squareup.okhttp3:mockwebserver:4.10.0")
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.robolectric)
   testImplementation(libs.roborazzi)

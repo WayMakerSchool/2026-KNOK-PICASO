@@ -1,0 +1,155 @@
+{
+  "model_version": "knok-sound-development-20261023-yamnet-mlp-expanded-v5-signal-guard",
+  "model_sha256": "3044ebdc85bc2bcc45050ffd89085fb7c7074e64bb14ee7fde7c48ffde0326f3",
+  "model_file": "knok_v2_calibrated.tflite",
+  "input_shape": [
+    64000
+  ],
+  "labels": [
+    "dragging_furniture",
+    "footstep",
+    "hammering",
+    "instant_impact",
+    "normal_or_unknown",
+    "vacuum_cleaner"
+  ],
+  "threshold": 0.65,
+  "sample_rate": 16000,
+  "crop": "maximum_100ms_rms_centered_4seconds_clamped",
+  "normalization": "inside_model_subtract_dc_and_peak_0.8",
+  "training_counts": {
+    "augmented_user": 2400,
+    "legacy_training": 0,
+    "public_train": 2396,
+    "physical_original": 43,
+    "physical_augmented": 215,
+    "unique_parent_sources": 2417
+  },
+  "independent_accuracy_verified": false,
+  "conversion": "TFLITE_BUILTINS_only",
+  "feature_method": "yamnet",
+  "head_estimator": "mlp",
+  "public_training_rows": 2396,
+  "public_reference_rows": 702,
+  "acoustic_equations": null,
+  "physical_source_grouped_development": {
+    "accuracy": 0.5348837209302325,
+    "macro_f1": 0.5284313725490196,
+    "count": 43,
+    "confusion_matrix": [
+      [
+        4,
+        0,
+        0,
+        3,
+        1,
+        0
+      ],
+      [
+        0,
+        4,
+        0,
+        3,
+        1,
+        0
+      ],
+      [
+        2,
+        0,
+        2,
+        0,
+        1,
+        1
+      ],
+      [
+        3,
+        0,
+        0,
+        0,
+        5,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        6,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        7
+      ]
+    ]
+  },
+  "original_candidate_development": {
+    "accuracy": 0.46511627906976744,
+    "macro_f1": 0.3467432950191571,
+    "count": 43,
+    "confusion_matrix": [
+      [
+        7,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        8,
+        0
+      ],
+      [
+        2,
+        0,
+        0,
+        0,
+        4,
+        0
+      ],
+      [
+        4,
+        0,
+        0,
+        0,
+        4,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        6,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        7
+      ]
+    ]
+  },
+  "physical_export_parity_max_error": 2.384185791015625e-07,
+  "head_model_version": "knok-sound-development-20261023-yamnet-mlp-expanded-v4",
+  "guard_source_model_sha256": "abb9342e7fb5292667aa83247206c59152ae83423b3a14128ade66f8a89a78ee",
+  "quantization_floor": {
+    "peak_pcm16_lsb": 2,
+    "rms_pcm16_lsb": 1,
+    "rule": "centered_peak<=2_LSB_OR_centered_RMS<=1_LSB",
+    "scope": "PCM16 quantization-resolution safeguard only; not an ambient sound classifier or calibrated physical-noise floor"
+  },
+  "normal_input_guard_parity_max_error": 0.0
+}

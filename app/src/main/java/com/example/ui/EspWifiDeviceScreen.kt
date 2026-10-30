@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.BuildConfig
 import com.example.ui.theme.DarkBackground
 import com.example.ui.theme.QuietAlert
 import com.example.ui.theme.QuietPrimary
@@ -52,6 +53,9 @@ fun EspWifiDeviceScreen(viewModel: EspRecorderViewModel) {
     val connectionState by viewModel.connectionState.collectAsState()
     val status by viewModel.status.collectAsState()
     val isBusy by viewModel.isBusy.collectAsState()
+    val automatic by viewModel.alwaysRecordingEnabled.collectAsState()
+    val receiverPosition by viewModel.receiverPosition.collectAsState()
+    val macServerReady by viewModel.macServerReady.collectAsState()
     val message by viewModel.message.collectAsState()
     var baseUrlText by remember { mutableStateOf(savedBaseUrl) }
 
@@ -90,6 +94,51 @@ fun EspWifiDeviceScreen(viewModel: EspRecorderViewModel) {
                 color = TextSecondary,
                 fontSize = 12.sp
             )
+        }
+
+        if (BuildConfig.KNOK_CANDIDATE) {
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("검증용 맥 분석", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        "이 별도 앱은 저장된 ESP32 WAV를 맥의 소리 모델로 보내고, 지원되는 소리에서만 층 연구 모델을 실행합니다. 설치 위치가 없으면 층 결과는 보류됩니다.",
+                        color = TextSecondary, fontSize = 11.sp, lineHeight = 16.sp
+                    )
+                    Text(
+                        "KNOK 설치 위치: ${when (receiverPosition) { "lower" -> "미니어처 아래층"; "upper" -> "미니어처 위층"; else -> "미등록" }}",
+                        color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Medium
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { viewModel.setReceiverPosition("") }, modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = if (receiverPosition.isBlank()) QuietPrimary else SlateBorder)) {
+                            Text("미등록", color = if (receiverPosition.isBlank()) DarkBackground else TextPrimary)
+                        }
+                        Button(onClick = { viewModel.setReceiverPosition("lower") }, modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = if (receiverPosition == "lower") QuietPrimary else SlateBorder)) {
+                            Text("아래층", color = if (receiverPosition == "lower") DarkBackground else TextPrimary)
+                        }
+                        Button(onClick = { viewModel.setReceiverPosition("upper") }, modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = if (receiverPosition == "upper") QuietPrimary else SlateBorder)) {
+                            Text("위층", color = if (receiverPosition == "upper") DarkBackground else TextPrimary)
+                        }
+                    }
+                    Text(
+                        "맥 분석 서버: ${when (macServerReady) { true -> "연결됨"; false -> "연결 안 됨"; null -> "확인 전" }}",
+                        color = if (macServerReady == true) QuietSuccess else if (macServerReady == false) QuietWarning else TextSecondary,
+                        fontSize = 12.sp
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = viewModel::checkMacAnalysisServer, modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = QuietPrimary)) {
+                            Text("서버 연결 확인", color = DarkBackground)
+                        }
+                        Button(onClick = viewModel::retryDeferredMacAnalyses, modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = SlateBorder)) {
+                            Text("맥 분석 재시도", color = TextPrimary)
+                        }
+                    }
+                }
+            }
         }
 
         GlassCard(modifier = Modifier.fillMaxWidth()) {
@@ -132,7 +181,7 @@ fun EspWifiDeviceScreen(viewModel: EspRecorderViewModel) {
                     placeholder = { Text("http://knok-esp32.local 또는 http://192.168.0.123") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    enabled = !isBusy && connectionState != EspRecorderConnectionState.RECORDING,
+                    enabled = canEditDeviceEndpoint(isBusy,automatic,connectionState),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = QuietPrimary,
                         unfocusedBorderColor = SlateBorder,
@@ -147,12 +196,13 @@ fun EspWifiDeviceScreen(viewModel: EspRecorderViewModel) {
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
+                if(automatic) Text("주소 변경은 상시 녹음 중지 → 새 주소 입력 → 연결 확인 → 재시작 순서로 진행합니다.",color=TextSecondary,fontSize=11.sp)
                 Button(
                     onClick = {
                         viewModel.setBaseUrl(baseUrlText)
                         viewModel.checkConnection()
                     },
-                    enabled = !isBusy && baseUrlText.isNotBlank(),
+                    enabled = canEditDeviceEndpoint(isBusy,automatic,connectionState) && baseUrlText.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(vertical = 12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = QuietPrimary),

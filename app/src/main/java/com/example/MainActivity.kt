@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -20,14 +21,18 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        if (BuildConfig.KNOK_V3) enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(0xFFF7F2EB.toInt(), 0xFFF7F2EB.toInt())
+        ) else enableEdgeToEdge()
         setContent {
             MyApplicationTheme(darkTheme = true, dynamicColor = false) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    NoiseApp(
+                    if (BuildConfig.KNOK_V3) com.example.ui.v3.KnokV3App(viewModel, espRecorderViewModel)
+                    else NoiseApp(
                         viewModel = viewModel,
                         espRecorderViewModel = espRecorderViewModel
                     )

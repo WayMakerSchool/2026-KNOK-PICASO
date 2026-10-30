@@ -1,0 +1,11 @@
+{
+  "window_start_sample": 36000,
+  "probabilities": {
+    "dragging_furniture": 6.687665887739058e-08,
+    "footstep": 2.1660714111249035e-08,
+    "hammering": 1.3971757653052919e-06,
+    "instant_impact": 5.2512150432448834e-05,
+    "normal_or_unknown": 9.473456543673819e-07,
+    "vacuum_cleaner": 0.9999450445175171
+  }
+}

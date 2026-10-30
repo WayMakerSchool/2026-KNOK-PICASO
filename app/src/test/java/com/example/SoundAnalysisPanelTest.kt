@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import com.example.data.NoiseRecord
 import com.example.ml.SoundAnalysis
+import com.example.ml.offlineAnalysisJson
 import com.example.ui.SoundAnalysisPanel
 import com.example.ui.theme.MyApplicationTheme
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -35,8 +36,14 @@ class SoundAnalysisPanelTest {
                 SoundAnalysisPanel(record, false, true, "인터넷 연결을 확인해 주세요.") { clicks++ }
             }
         }
-        compose.onNodeWithText("소리 분석 다시 시도").performClick()
-        assertEquals(1, clicks)
+        if (BuildConfig.KNOK_CANDIDATE) {
+            compose.onNodeWithText("검증 앱은 맥 분석 서버로 수신된 ESP32 녹음만 분석합니다.").assertIsDisplayed()
+            compose.onNodeWithText("소리 분석 다시 시도").assertDoesNotExist()
+            assertEquals(0, clicks)
+        } else {
+            compose.onNodeWithText("소리 분석 다시 시도").performClick()
+            assertEquals(1, clicks)
+        }
         compose.onNodeWithText("인터넷 연결을 확인해 주세요.").assertIsDisplayed()
     }
 
@@ -44,7 +51,11 @@ class SoundAnalysisPanelTest {
         compose.setContent {
             MyApplicationTheme { SoundAnalysisPanel(record, true, false, null) {} }
         }
-        compose.onNodeWithText("소리 분석 중…").assertIsNotEnabled()
+        if (BuildConfig.KNOK_CANDIDATE) {
+            compose.onNodeWithText("검증 앱은 맥 분석 서버로 수신된 ESP32 녹음만 분석합니다.").assertIsDisplayed()
+        } else {
+            compose.onNodeWithText("소리 분석 중…").assertIsNotEnabled()
+        }
     }
 
     @Test fun savedResultShowsUncertaintyAndAlternativeWithoutCallingAgain() {
@@ -61,5 +72,13 @@ class SoundAnalysisPanelTest {
         compose.onNodeWithText("다른 가능성:", substring = true).assertIsDisplayed()
         compose.onNodeWithText("소리 분석").assertDoesNotExist()
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/sound-analysis.png")
+    }
+    @Test fun longEventShowsTheActualRepresentativeWindowAndModel() {
+        val result=com.example.ml.AudioClassificationResult("footstep",.8f,true,mapOf("footstep" to .8f),"frozen-v2-test",10,32000,true)
+        compose.setContent {
+            MyApplicationTheme { SoundAnalysisPanel(record.copy(durationMs=15000,soundAnalysisJson=result.offlineAnalysisJson()),false,true,null){} }
+        }
+        compose.onNodeWithText("2.0–6.0초",substring=true).assertIsDisplayed()
+        compose.onNodeWithText("분류 모델: frozen-v2-test").assertIsDisplayed()
     }
 }

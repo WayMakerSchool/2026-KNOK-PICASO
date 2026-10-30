@@ -1,0 +1,741 @@
+{
+  "model_id": "knok-floor-snu-v3",
+  "status": "trained_research_candidate",
+  "started_at_kst": "2026-10-15T16:19:52.732773+09:00",
+  "completed_at_kst": "2026-10-15T16:19:53.693477+09:00",
+  "selected": {
+    "config": {
+      "family": "shape",
+      "target": "floor",
+      "algorithm": "svm",
+      "c": 10.0,
+      "augment": false
+    },
+    "macro_f1": 0.9351908675008502,
+    "accuracy": 0.9355555555555556,
+    "above_to_below_rate": 0.035,
+    "score": 0.9316908675008503
+  },
+  "model_sha256": "439dcc3a054c0e0b1e2e0dd9a874af1c9d9998f754a0fb84a8a266ad7df06800",
+  "feature_version": "normalized-event-spectrum-decay-v2",
+  "feature_dimensions": 226,
+  "training_recordings": 1800,
+  "labels": {
+    "below": "아래층",
+    "same": "같은 층",
+    "above": "위층"
+  },
+  "selection_sources_sha256": {
+    "v2/artifacts/outer-0m-selection.json": "08a7a36d122b4b70f9d2e2853990c000aefaef518e1af2e255c5e90d547edcc5",
+    "v2/artifacts/outer-6m-selection.json": "ce5c5b48a3b96f81d9e95032d57d71e595b2c7cacd9cde177f73902f07cc5313",
+    "v2/artifacts/outer-12m-selection.json": "d280af22875c53f54c1b373d7e3130cc857142d47c08cd65b79f2d44a3f267ec",
+    "v2/artifacts/full-fit-selection.json": "8479f046664c701b0c04a61a196b9a56d5a78162adb1a190021cf691f15b8c47"
+  },
+  "evaluation": {
+    "evaluation_status": "POST-HOC exploratory reused-data spatial revalidation; family restricted after inspecting V2; no independent test",
+    "baseline": {
+      "recordings": 1800,
+      "accuracy": 0.8572222222222222,
+      "macro_f1": 0.8574497508437603,
+      "label_order": [
+        "below",
+        "same",
+        "above"
+      ],
+      "confusion_matrix": [
+        [
+          511,
+          22,
+          67
+        ],
+        [
+          47,
+          545,
+          8
+        ],
+        [
+          83,
+          30,
+          487
+        ]
+      ],
+      "per_class": {
+        "below": {
+          "precision": 0.797191887675507,
+          "recall": 0.8516666666666667,
+          "f1-score": 0.8235294117647058,
+          "support": 600.0
+        },
+        "same": {
+          "precision": 0.9128978224455612,
+          "recall": 0.9083333333333333,
+          "f1-score": 0.910609857978279,
+          "support": 600.0
+        },
+        "above": {
+          "precision": 0.8665480427046264,
+          "recall": 0.8116666666666666,
+          "f1-score": 0.8382099827882961,
+          "support": 600.0
+        },
+        "accuracy": 0.8572222222222222,
+        "macro avg": {
+          "precision": 0.8588792509418982,
+          "recall": 0.8572222222222222,
+          "f1-score": 0.8574497508437603,
+          "support": 1800.0
+        },
+        "weighted avg": {
+          "precision": 0.8588792509418982,
+          "recall": 0.8572222222222222,
+          "f1-score": 0.8574497508437604,
+          "support": 1800.0
+        }
+      },
+      "by_sound": {
+        "CD": {
+          "recordings": 450,
+          "accuracy": 0.88
+        },
+        "HD": {
+          "recordings": 450,
+          "accuracy": 0.7444444444444445
+        },
+        "HH": {
+          "recordings": 450,
+          "accuracy": 0.9022222222222223
+        },
+        "MB": {
+          "recordings": 450,
+          "accuracy": 0.9022222222222223
+        }
+      },
+      "above_to_below_count": 83,
+      "above_to_below_rate": 0.13833333333333334,
+      "selection_score": 0.8436164175104269
+    },
+    "improved": {
+      "recordings": 1800,
+      "accuracy": 0.9338888888888889,
+      "macro_f1": 0.9333567147104697,
+      "label_order": [
+        "below",
+        "same",
+        "above"
+      ],
+      "confusion_matrix": [
+        [
+          522,
+          30,
+          48
+        ],
+        [
+          19,
+          581,
+          0
+        ],
+        [
+          19,
+          3,
+          578
+        ]
+      ],
+      "per_class": {
+        "below": {
+          "precision": 0.9321428571428572,
+          "recall": 0.87,
+          "f1-score": 0.9,
+          "support": 600.0
+        },
+        "same": {
+          "precision": 0.9462540716612378,
+          "recall": 0.9683333333333334,
+          "f1-score": 0.957166392092257,
+          "support": 600.0
+        },
+        "above": {
+          "precision": 0.9233226837060703,
+          "recall": 0.9633333333333334,
+          "f1-score": 0.9429037520391517,
+          "support": 600.0
+        },
+        "accuracy": 0.9338888888888889,
+        "macro avg": {
+          "precision": 0.9339065375033884,
+          "recall": 0.9338888888888889,
+          "f1-score": 0.9333567147104697,
+          "support": 1800.0
+        },
+        "weighted avg": {
+          "precision": 0.9339065375033885,
+          "recall": 0.9338888888888889,
+          "f1-score": 0.9333567147104695,
+          "support": 1800.0
+        }
+      },
+      "by_sound": {
+        "CD": {
+          "recordings": 450,
+          "accuracy": 0.9577777777777777
+        },
+        "HD": {
+          "recordings": 450,
+          "accuracy": 0.8422222222222222
+        },
+        "HH": {
+          "recordings": 450,
+          "accuracy": 0.9844444444444445
+        },
+        "MB": {
+          "recordings": 450,
+          "accuracy": 0.9511111111111111
+        }
+      },
+      "above_to_below_count": 19,
+      "above_to_below_rate": 0.03166666666666667,
+      "selection_score": 0.930190048043803
+    },
+    "folds": [
+      {
+        "distance_m": 0,
+        "selection": {
+          "config": {
+            "family": "shape",
+            "target": "floor",
+            "algorithm": "svm",
+            "c": 1.0,
+            "augment": false
+          },
+          "macro_f1": 0.9338559142315077,
+          "accuracy": 0.9341666666666667,
+          "above_to_below_rate": 0.03,
+          "score": 0.9308559142315077
+        },
+        "baseline": {
+          "recordings": 600,
+          "accuracy": 0.8433333333333334,
+          "macro_f1": 0.8420264715903913,
+          "label_order": [
+            "below",
+            "same",
+            "above"
+          ],
+          "confusion_matrix": [
+            [
+              135,
+              5,
+              60
+            ],
+            [
+              4,
+              189,
+              7
+            ],
+            [
+              17,
+              1,
+              182
+            ]
+          ],
+          "per_class": {
+            "below": {
+              "precision": 0.8653846153846154,
+              "recall": 0.675,
+              "f1-score": 0.7584269662921348,
+              "support": 200.0
+            },
+            "same": {
+              "precision": 0.9692307692307692,
+              "recall": 0.945,
+              "f1-score": 0.9569620253164557,
+              "support": 200.0
+            },
+            "above": {
+              "precision": 0.7309236947791165,
+              "recall": 0.91,
+              "f1-score": 0.8106904231625836,
+              "support": 200.0
+            },
+            "accuracy": 0.8433333333333334,
+            "macro avg": {
+              "precision": 0.8551796931315003,
+              "recall": 0.8433333333333334,
+              "f1-score": 0.8420264715903913,
+              "support": 600.0
+            },
+            "weighted avg": {
+              "precision": 0.8551796931315003,
+              "recall": 0.8433333333333334,
+              "f1-score": 0.8420264715903913,
+              "support": 600.0
+            }
+          },
+          "by_sound": {
+            "CD": {
+              "recordings": 150,
+              "accuracy": 0.9333333333333333
+            },
+            "HD": {
+              "recordings": 150,
+              "accuracy": 0.66
+            },
+            "HH": {
+              "recordings": 150,
+              "accuracy": 0.9466666666666667
+            },
+            "MB": {
+              "recordings": 150,
+              "accuracy": 0.8333333333333334
+            }
+          },
+          "above_to_below_count": 17,
+          "above_to_below_rate": 0.085,
+          "selection_score": 0.8335264715903914
+        },
+        "improved": {
+          "recordings": 600,
+          "accuracy": 0.9083333333333333,
+          "macro_f1": 0.9058473483835999,
+          "label_order": [
+            "below",
+            "same",
+            "above"
+          ],
+          "confusion_matrix": [
+            [
+              147,
+              6,
+              47
+            ],
+            [
+              0,
+              200,
+              0
+            ],
+            [
+              0,
+              2,
+              198
+            ]
+          ],
+          "per_class": {
+            "below": {
+              "precision": 1.0,
+              "recall": 0.735,
+              "f1-score": 0.8472622478386167,
+              "support": 200.0
+            },
+            "same": {
+              "precision": 0.9615384615384616,
+              "recall": 1.0,
+              "f1-score": 0.9803921568627451,
+              "support": 200.0
+            },
+            "above": {
+              "precision": 0.8081632653061225,
+              "recall": 0.99,
+              "f1-score": 0.8898876404494382,
+              "support": 200.0
+            },
+            "accuracy": 0.9083333333333333,
+            "macro avg": {
+              "precision": 0.9232339089481947,
+              "recall": 0.9083333333333332,
+              "f1-score": 0.9058473483835999,
+              "support": 600.0
+            },
+            "weighted avg": {
+              "precision": 0.9232339089481947,
+              "recall": 0.9083333333333333,
+              "f1-score": 0.9058473483836,
+              "support": 600.0
+            }
+          },
+          "by_sound": {
+            "CD": {
+              "recordings": 150,
+              "accuracy": 0.9933333333333333
+            },
+            "HD": {
+              "recordings": 150,
+              "accuracy": 0.6533333333333333
+            },
+            "HH": {
+              "recordings": 150,
+              "accuracy": 0.9933333333333333
+            },
+            "MB": {
+              "recordings": 150,
+              "accuracy": 0.9933333333333333
+            }
+          },
+          "above_to_below_count": 0,
+          "above_to_below_rate": 0.0,
+          "selection_score": 0.9058473483835999
+        }
+      },
+      {
+        "distance_m": 6,
+        "selection": {
+          "config": {
+            "family": "shape",
+            "target": "floor",
+            "algorithm": "svm",
+            "c": 10.0,
+            "augment": true
+          },
+          "macro_f1": 0.841527153718444,
+          "accuracy": 0.84,
+          "above_to_below_rate": 0.14,
+          "score": 0.827527153718444
+        },
+        "baseline": {
+          "recordings": 600,
+          "accuracy": 0.92,
+          "macro_f1": 0.9202358831577753,
+          "label_order": [
+            "below",
+            "same",
+            "above"
+          ],
+          "confusion_matrix": [
+            [
+              176,
+              17,
+              7
+            ],
+            [
+              0,
+              200,
+              0
+            ],
+            [
+              4,
+              20,
+              176
+            ]
+          ],
+          "per_class": {
+            "below": {
+              "precision": 0.9777777777777777,
+              "recall": 0.88,
+              "f1-score": 0.9263157894736842,
+              "support": 200.0
+            },
+            "same": {
+              "precision": 0.8438818565400844,
+              "recall": 1.0,
+              "f1-score": 0.9153318077803204,
+              "support": 200.0
+            },
+            "above": {
+              "precision": 0.9617486338797814,
+              "recall": 0.88,
+              "f1-score": 0.9190600522193212,
+              "support": 200.0
+            },
+            "accuracy": 0.92,
+            "macro avg": {
+              "precision": 0.9278027560658811,
+              "recall": 0.9199999999999999,
+              "f1-score": 0.9202358831577753,
+              "support": 600.0
+            },
+            "weighted avg": {
+              "precision": 0.9278027560658811,
+              "recall": 0.92,
+              "f1-score": 0.9202358831577753,
+              "support": 600.0
+            }
+          },
+          "by_sound": {
+            "CD": {
+              "recordings": 150,
+              "accuracy": 0.9666666666666667
+            },
+            "HD": {
+              "recordings": 150,
+              "accuracy": 0.7733333333333333
+            },
+            "HH": {
+              "recordings": 150,
+              "accuracy": 0.94
+            },
+            "MB": {
+              "recordings": 150,
+              "accuracy": 1.0
+            }
+          },
+          "above_to_below_count": 4,
+          "above_to_below_rate": 0.02,
+          "selection_score": 0.9182358831577753
+        },
+        "improved": {
+          "recordings": 600,
+          "accuracy": 0.9716666666666667,
+          "macro_f1": 0.971668859656936,
+          "label_order": [
+            "below",
+            "same",
+            "above"
+          ],
+          "confusion_matrix": [
+            [
+              190,
+              9,
+              1
+            ],
+            [
+              5,
+              195,
+              0
+            ],
+            [
+              2,
+              0,
+              198
+            ]
+          ],
+          "per_class": {
+            "below": {
+              "precision": 0.9644670050761421,
+              "recall": 0.95,
+              "f1-score": 0.9571788413098237,
+              "support": 200.0
+            },
+            "same": {
+              "precision": 0.9558823529411765,
+              "recall": 0.975,
+              "f1-score": 0.9653465346534653,
+              "support": 200.0
+            },
+            "above": {
+              "precision": 0.9949748743718593,
+              "recall": 0.99,
+              "f1-score": 0.9924812030075187,
+              "support": 200.0
+            },
+            "accuracy": 0.9716666666666667,
+            "macro avg": {
+              "precision": 0.9717747441297261,
+              "recall": 0.9716666666666667,
+              "f1-score": 0.971668859656936,
+              "support": 600.0
+            },
+            "weighted avg": {
+              "precision": 0.9717747441297259,
+              "recall": 0.9716666666666667,
+              "f1-score": 0.9716688596569361,
+              "support": 600.0
+            }
+          },
+          "by_sound": {
+            "CD": {
+              "recordings": 150,
+              "accuracy": 0.9866666666666667
+            },
+            "HD": {
+              "recordings": 150,
+              "accuracy": 0.94
+            },
+            "HH": {
+              "recordings": 150,
+              "accuracy": 0.9933333333333333
+            },
+            "MB": {
+              "recordings": 150,
+              "accuracy": 0.9666666666666667
+            }
+          },
+          "above_to_below_count": 2,
+          "above_to_below_rate": 0.01,
+          "selection_score": 0.970668859656936
+        }
+      },
+      {
+        "distance_m": 12,
+        "selection": {
+          "config": {
+            "family": "shape",
+            "target": "floor",
+            "algorithm": "svm",
+            "c": 10.0,
+            "augment": true
+          },
+          "macro_f1": 0.9116118097773102,
+          "accuracy": 0.9125,
+          "above_to_below_rate": 0.0225,
+          "score": 0.9093618097773102
+        },
+        "baseline": {
+          "recordings": 600,
+          "accuracy": 0.8083333333333333,
+          "macro_f1": 0.8095639700956397,
+          "label_order": [
+            "below",
+            "same",
+            "above"
+          ],
+          "confusion_matrix": [
+            [
+              200,
+              0,
+              0
+            ],
+            [
+              43,
+              156,
+              1
+            ],
+            [
+              62,
+              9,
+              129
+            ]
+          ],
+          "per_class": {
+            "below": {
+              "precision": 0.6557377049180327,
+              "recall": 1.0,
+              "f1-score": 0.7920792079207921,
+              "support": 200.0
+            },
+            "same": {
+              "precision": 0.9454545454545454,
+              "recall": 0.78,
+              "f1-score": 0.8547945205479452,
+              "support": 200.0
+            },
+            "above": {
+              "precision": 0.9923076923076923,
+              "recall": 0.645,
+              "f1-score": 0.7818181818181819,
+              "support": 200.0
+            },
+            "accuracy": 0.8083333333333333,
+            "macro avg": {
+              "precision": 0.8644999808934234,
+              "recall": 0.8083333333333332,
+              "f1-score": 0.8095639700956397,
+              "support": 600.0
+            },
+            "weighted avg": {
+              "precision": 0.8644999808934235,
+              "recall": 0.8083333333333333,
+              "f1-score": 0.8095639700956397,
+              "support": 600.0
+            }
+          },
+          "by_sound": {
+            "CD": {
+              "recordings": 150,
+              "accuracy": 0.74
+            },
+            "HD": {
+              "recordings": 150,
+              "accuracy": 0.8
+            },
+            "HH": {
+              "recordings": 150,
+              "accuracy": 0.82
+            },
+            "MB": {
+              "recordings": 150,
+              "accuracy": 0.8733333333333333
+            }
+          },
+          "above_to_below_count": 62,
+          "above_to_below_rate": 0.31,
+          "selection_score": 0.7785639700956397
+        },
+        "improved": {
+          "recordings": 600,
+          "accuracy": 0.9216666666666666,
+          "macro_f1": 0.9225585974677558,
+          "label_order": [
+            "below",
+            "same",
+            "above"
+          ],
+          "confusion_matrix": [
+            [
+              185,
+              15,
+              0
+            ],
+            [
+              14,
+              186,
+              0
+            ],
+            [
+              17,
+              1,
+              182
+            ]
+          ],
+          "per_class": {
+            "below": {
+              "precision": 0.8564814814814815,
+              "recall": 0.925,
+              "f1-score": 0.8894230769230769,
+              "support": 200.0
+            },
+            "same": {
+              "precision": 0.9207920792079208,
+              "recall": 0.93,
+              "f1-score": 0.9253731343283582,
+              "support": 200.0
+            },
+            "above": {
+              "precision": 1.0,
+              "recall": 0.91,
+              "f1-score": 0.9528795811518325,
+              "support": 200.0
+            },
+            "accuracy": 0.9216666666666666,
+            "macro avg": {
+              "precision": 0.9257578535631342,
+              "recall": 0.9216666666666667,
+              "f1-score": 0.9225585974677558,
+              "support": 600.0
+            },
+            "weighted avg": {
+              "precision": 0.9257578535631342,
+              "recall": 0.9216666666666666,
+              "f1-score": 0.9225585974677559,
+              "support": 600.0
+            }
+          },
+          "by_sound": {
+            "CD": {
+              "recordings": 150,
+              "accuracy": 0.8933333333333333
+            },
+            "HD": {
+              "recordings": 150,
+              "accuracy": 0.9333333333333333
+            },
+            "HH": {
+              "recordings": 150,
+              "accuracy": 0.9666666666666667
+            },
+            "MB": {
+              "recordings": 150,
+              "accuracy": 0.8933333333333333
+            }
+          },
+          "above_to_below_count": 17,
+          "above_to_below_rate": 0.085,
+          "selection_score": 0.9140585974677559
+        }
+      }
+    ]
+  },
+  "limits": [
+    "Post-hoc model-family restriction can inflate reported performance; all ZIP data were examined.",
+    "Outer models exclude corresponding source distance; final all-data candidate is NOT independently evaluated.",
+    "One building/phone, four known sound types; no unknown/noise rejection or calibrated confidence.",
+    "No vibration features, new-building/KNOK-device validation, app/firmware or GitHub deployment."
+  ]
+}

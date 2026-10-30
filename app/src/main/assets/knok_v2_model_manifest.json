@@ -1,0 +1,51 @@
+{
+  "model_version": "knok-room-pairgate-research-20261024",
+  "model_file": "knok_v2_yamnet.tflite",
+  "model_sha256": "4cba2d11bbf8abbe89c587f06b025b52447cb5ec074fd2a0bd57da772940f79f",
+  "labels": [
+    "dragging_furniture",
+    "footstep",
+    "hammering",
+    "instant_impact",
+    "normal_or_unknown",
+    "vacuum_cleaner"
+  ],
+  "input_shape": [
+    64000
+  ],
+  "sample_rate": 16000,
+  "threshold": 0.65,
+  "crop": "maximum_integrated_100ms_rms_4seconds",
+  "normalization": "inside_model_subtract_dc_and_peak_0.8",
+  "inference_pipeline": "quiet_context_pair_gate_v1",
+  "auxiliary_gate": {
+    "asset_file": "knok_room_pair_gate.tflite",
+    "model_sha256": "807b8c50879df9c44f4550c39e3781503f95d001a4727c65dfe127f886c816c2",
+    "output_labels": [
+      "dragging_furniture",
+      "footstep",
+      "hammering",
+      "instant_impact",
+      "normal_or_unknown",
+      "vacuum_cleaner"
+    ],
+    "denoise_alpha": 1.0,
+    "crop": "maximum_integrated_100ms_rms_4seconds"
+  },
+  "quantization_floor": {
+    "peak_pcm16_lsb": 2,
+    "rms_pcm16_lsb": 1,
+    "scope": "PCM16 resolution guard only"
+  },
+  "development": {
+    "accuracy": 0.6190476190476191,
+    "pair_accuracy": 0.5714285714285714,
+    "macro_f1": 0.6121519258615162,
+    "source_parents": 84,
+    "captures": 96,
+    "scope": "adaptive_source_group3fold_one_room_replay_development"
+  },
+  "independent_accuracy_verified": false,
+  "production_adoption": false,
+  "export_parity_max_error": 7.152557373046875e-07
+}

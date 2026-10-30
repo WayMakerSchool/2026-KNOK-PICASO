@@ -9,9 +9,9 @@
         android:usesCleartextTraffic="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="${knokAppIcon}"
+        android:label="${knokAppLabel}"
+        android:roundIcon="${knokRoundIcon}"
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication">
         <provider
@@ -24,7 +24,7 @@
         <activity
             android:name="com.example.MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
+            android:label="${knokAppLabel}"
             android:launchMode="singleTask"
             android:theme="@style/Theme.MyApplication">
             <intent-filter>

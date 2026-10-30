@@ -327,7 +327,7 @@ object AudioFeatureExtractor {
 
     private fun melToHz(mel: Double): Double = 700.0 * (10.0.pow(mel / 2595.0) - 1.0)
 
-    private fun readPcm16Wav(file: File): FloatArray {
+    internal fun readPcm16Wav(file: File): FloatArray {
         RandomAccessFile(file, "r").use { input ->
             require(readFourCc(input) == "RIFF") { "지원하지 않는 WAV 컨테이너입니다." }
             readUnsignedInt(input) // RIFF chunk size
@@ -382,7 +382,7 @@ object AudioFeatureExtractor {
                 var channelSum = 0.0
                 repeat(channels) {
                     val unsigned = (bytes[byteIndex].toInt() and 0xff) or
-                        (bytes[byteIndex + 1].toInt() shl 8)
+                        ((bytes[byteIndex + 1].toInt() and 0xff) shl 8)
                     val signed = if (unsigned and 0x8000 != 0) unsigned - 0x1_0000 else unsigned
                     channelSum += signed / 32768.0
                     byteIndex += 2

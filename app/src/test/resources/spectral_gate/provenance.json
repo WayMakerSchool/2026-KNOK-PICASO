@@ -1,0 +1,29 @@
+{
+  "scope": "Python SciPy parity fixtures, development input only",
+  "source_parent": "snu_093013",
+  "source_event": "104e6f858428-23bf9eb916df557c-00000001",
+  "scipy_gate_code_sha256": "e4123fa5c1fc61ad873407481aca0bcf51e9b0fbc19cf501484a63f4986f5803",
+  "fixtures": [
+    {
+      "name": "training_capture",
+      "length": 128000,
+      "input_sha256": "97a6c999af9368725e6edd22f5116089d2ed4179cb3f3cd2c6a8dc235921052d",
+      "expected_sha256": "2986f2d95ef594ae2fce574c428b8de18e7739d0a5b159a73068c3ea47517009",
+      "bypass": false
+    },
+    {
+      "name": "unaligned_tail",
+      "length": 64013,
+      "input_sha256": "0f9fa90163b28434e90b07c3fd0b6b6f0423a63e1b7269a9fc415d0eb23058cd",
+      "expected_sha256": "eef1aa78310b3ebe0076c4d338ce397eca40669a7cfb5624322924536b5c179e",
+      "bypass": false
+    },
+    {
+      "name": "continuous",
+      "length": 16000,
+      "input_sha256": "219cc82852a7c9f09011c117cfda6147f2e2e75ee80265087290254bfa83c5ce",
+      "expected_sha256": "219cc82852a7c9f09011c117cfda6147f2e2e75ee80265087290254bfa83c5ce",
+      "bypass": true
+    }
+  ]
+}
